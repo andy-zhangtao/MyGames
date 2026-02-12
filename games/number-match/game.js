@@ -209,8 +209,6 @@ class NumberMatchGame {
         this.modalBtn.textContent = btnText;
         this.modal.classList.add('show');
     }
-        this.renderBoard();
-    }
 
     generateGrid() {
         this.grid = [];
@@ -435,7 +433,7 @@ class NumberMatchGame {
 
     updateDisplay() {
         this.scoreEl.textContent = this.score;
-        this.movesEl.textContent = this.moves;
+        if (this.movesEl) this.movesEl.textContent = this.moves;
         this.hintCountEl.textContent = this.hints;
         this.shuffleCountEl.textContent = this.shuffles;
         this.bombCountEl.textContent = this.bombs;
