@@ -214,12 +214,18 @@ class NumberMatchGame {
             this.removeSelectedCells();
             this.fillEmptySpaces();
             this.updateDisplay();
-            this.showResult(earnedScore);
+            if (this.combo >= 3) {
+                this.showResult(earnedScore);
+            } else {
+                this.showQuickScore(earnedScore);
+            }
             this.saveProgress();
         });
         
         this.playSound('success');
-        this.celebrate();
+        if (this.combo >= 2) {
+            this.celebrate();
+        }
     }
 
     animateRemoval(callback) {
@@ -396,6 +402,16 @@ class NumberMatchGame {
         this.renderBoard();
         this.animateNewCells();
         this.playSound('shuffle');
+    }
+
+    showQuickScore(earnedScore) {
+        const scoreEl = document.querySelector('.score-display');
+        const popup = document.createElement('div');
+        popup.className = 'quick-score-popup';
+        popup.textContent = `+${earnedScore}`;
+        scoreEl.appendChild(popup);
+        
+        setTimeout(() => popup.remove(), 800);
     }
 
     showResult(earnedScore) {
