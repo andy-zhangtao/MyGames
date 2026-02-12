@@ -572,6 +572,186 @@ body {
     color: var(--text-secondary);
 }
 
+.tool-btn.shop-btn {
+    background: linear-gradient(135deg, #FFE66D, #FFD93D);
+}
+
+.tool-btn.shop-btn .tool-icon {
+    animation: shop-pulse 2s ease-in-out infinite;
+}
+
+@keyframes shop-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+/* 道具商店弹窗 */
+.shop-content {
+    max-width: 340px;
+    padding: 0;
+}
+
+.shop-header {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #FFE66D, #FFD93D);
+    border-radius: 24px 24px 0 0;
+    gap: 10px;
+}
+
+.shop-emoji {
+    font-size: 2rem;
+}
+
+.shop-title {
+    flex: 1;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.shop-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.1);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.shop-close:hover {
+    background: rgba(0,0,0,0.2);
+}
+
+.shop-score {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    background: linear-gradient(135deg, #f8f9ff, #fff5f8);
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.shop-score-value {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--warning);
+}
+
+.shop-items {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.shop-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: white;
+    border: 2px solid #eee;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: var(--transition);
+    gap: 12px;
+}
+
+.shop-item:hover {
+    border-color: var(--secondary);
+    transform: translateX(5px);
+}
+
+.shop-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.shop-item .item-icon {
+    font-size: 2rem;
+    width: 44px;
+    text-align: center;
+}
+
+.shop-item .item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.shop-item .item-name {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.shop-item .item-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.shop-item .item-price {
+    font-weight: 800;
+    color: var(--warning);
+    background: linear-gradient(135deg, #fff9e6, #fff5d6);
+    padding: 6px 12px;
+    border-radius: 10px;
+}
+
+.shop-item.disabled .item-price {
+    color: var(--text-secondary);
+    background: #f0f0f0;
+}
+
+.shop-tip {
+    text-align: center;
+    padding: 12px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    border-top: 1px solid #eee;
+    margin: 0;
+}
+
+/* 炸弹模式 */
+.number-cell.bomb-target {
+    animation: bomb-target-pulse 0.5s ease infinite;
+    cursor: crosshair !important;
+}
+
+@keyframes bomb-target-pulse {
+    0%, 100% { 
+        box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7);
+    }
+    50% { 
+        box-shadow: 0 0 20px 10px rgba(255, 107, 107, 0.3);
+    }
+}
+
+/* 冻结效果 */
+.timer-display.frozen {
+    animation: frozen-effect 1s ease infinite;
+}
+
+.timer-display.frozen .timer-value {
+    color: #74B9FF !important;
+}
+
+@keyframes frozen-effect {
+    0%, 100% { 
+        filter: drop-shadow(0 0 5px rgba(116, 185, 255, 0.5));
+    }
+    50% { 
+        filter: drop-shadow(0 0 15px rgba(116, 185, 255, 0.8));
+    }
+}
+
 /* 难度选择器 */
 .difficulty-selector {
     display: flex;

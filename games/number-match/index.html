@@ -67,13 +67,24 @@
         </div>
 
         <div class="tool-buttons">
-            <button class="tool-btn" id="hint-btn">
+            <button class="tool-btn" id="hint-btn" title="提示 (30分)">
                 <span class="tool-icon">💡</span>
                 <span class="tool-count" id="hint-count">3</span>
             </button>
-            <button class="tool-btn" id="shuffle-btn">
+            <button class="tool-btn" id="shuffle-btn" title="刷新 (50分)">
                 <span class="tool-icon">🔄</span>
                 <span class="tool-count" id="shuffle-count">2</span>
+            </button>
+            <button class="tool-btn" id="bomb-btn" title="炸弹 (80分)">
+                <span class="tool-icon">💥</span>
+                <span class="tool-count" id="bomb-count">0</span>
+            </button>
+            <button class="tool-btn" id="freeze-btn" title="冻结 (60分)">
+                <span class="tool-icon">❄️</span>
+                <span class="tool-count" id="freeze-count">0</span>
+            </button>
+            <button class="tool-btn shop-btn" id="shop-btn" title="道具商店">
+                <span class="tool-icon">🏪</span>
             </button>
         </div>
 
@@ -104,6 +115,55 @@
                 <span class="modal-score-label">分</span>
             </div>
             <button class="modal-btn" id="modal-btn">继续游戏</button>
+        </div>
+    </div>
+
+    <div class="modal" id="shop-modal">
+        <div class="modal-content shop-content">
+            <div class="shop-header">
+                <span class="shop-emoji">🏪</span>
+                <h2 class="shop-title">道具商店</h2>
+                <button class="shop-close" id="shop-close">✕</button>
+            </div>
+            <div class="shop-score">
+                <span>当前积分:</span>
+                <span class="shop-score-value" id="shop-score">0</span>
+            </div>
+            <div class="shop-items">
+                <div class="shop-item" data-item="hint" data-price="30">
+                    <span class="item-icon">💡</span>
+                    <div class="item-info">
+                        <span class="item-name">提示</span>
+                        <span class="item-desc">显示可消除的组合</span>
+                    </div>
+                    <div class="item-price">30分</div>
+                </div>
+                <div class="shop-item" data-item="shuffle" data-price="50">
+                    <span class="item-icon">🔄</span>
+                    <div class="item-info">
+                        <span class="item-name">刷新</span>
+                        <span class="item-desc">重新排列所有数字</span>
+                    </div>
+                    <div class="item-price">50分</div>
+                </div>
+                <div class="shop-item" data-item="bomb" data-price="80">
+                    <span class="item-icon">💥</span>
+                    <div class="item-info">
+                        <span class="item-name">炸弹</span>
+                        <span class="item-desc">消除任意一个数字</span>
+                    </div>
+                    <div class="item-price">80分</div>
+                </div>
+                <div class="shop-item" data-item="freeze" data-price="60">
+                    <span class="item-icon">❄️</span>
+                    <div class="item-info">
+                        <span class="item-name">冻结</span>
+                        <span class="item-desc">倒计时暂停10秒</span>
+                    </div>
+                    <div class="item-price">60分</div>
+                </div>
+            </div>
+            <p class="shop-tip">💡 购买时游戏暂停计时</p>
         </div>
     </div>
 

@@ -11,9 +11,21 @@ class NumberMatchGame {
         this.combo = 0;
         this.hints = 3;
         this.shuffles = 2;
+        this.bombs = 0;
+        this.freezes = 0;
         this.gameMode = 'normal';
         this.timeLeft = 30;
         this.timerInterval = null;
+        this.isTimerPaused = false;
+        this.bombMode = false;
+        this.freezeActive = false;
+        
+        this.prices = {
+            hint: 30,
+            shuffle: 50,
+            bomb: 80,
+            freeze: 60
+        };
         
         this.initElements();
         this.bindEvents();
@@ -34,6 +46,11 @@ class NumberMatchGame {
         this.hintCountEl = document.getElementById('hint-count');
         this.shuffleBtn = document.getElementById('shuffle-btn');
         this.shuffleCountEl = document.getElementById('shuffle-count');
+        this.bombBtn = document.getElementById('bomb-btn');
+        this.bombCountEl = document.getElementById('bomb-count');
+        this.freezeBtn = document.getElementById('freeze-btn');
+        this.freezeCountEl = document.getElementById('freeze-count');
+        this.shopBtn = document.getElementById('shop-btn');
         this.diffBtns = document.querySelectorAll('.diff-btn');
         this.modal = document.getElementById('result-modal');
         this.modalEmoji = document.getElementById('modal-emoji');
@@ -45,6 +62,10 @@ class NumberMatchGame {
         this.timerDisplayEl = document.getElementById('timer-display');
         this.timerEl = document.getElementById('timer');
         this.modeBtns = document.querySelectorAll('.mode-btn');
+        this.shopModal = document.getElementById('shop-modal');
+        this.shopScoreEl = document.getElementById('shop-score');
+        this.shopCloseBtn = document.getElementById('shop-close');
+        this.shopItems = document.querySelectorAll('.shop-item');
     }
 
     bindEvents() {
@@ -52,7 +73,15 @@ class NumberMatchGame {
         this.clearBtn.addEventListener('click', () => this.clearSelection());
         this.hintBtn.addEventListener('click', () => this.showHint());
         this.shuffleBtn.addEventListener('click', () => this.shuffleBoard());
+        this.bombBtn.addEventListener('click', () => this.activateBomb());
+        this.freezeBtn.addEventListener('click', () => this.activateFreeze());
+        this.shopBtn.addEventListener('click', () => this.openShop());
+        this.shopCloseBtn.addEventListener('click', () => this.closeShop());
         this.modalBtn.addEventListener('click', () => this.closeModal());
+        
+        this.shopItems.forEach(item => {
+            item.addEventListener('click', () => this.buyItem(item.dataset.item));
+        });
         
         this.diffBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -81,6 +110,8 @@ class NumberMatchGame {
         this.moves = 0;
         this.combo = 0;
         this.timeLeft = 30;
+        this.bombMode = false;
+        this.freezeActive = false;
         
         this.targetEl.textContent = this.targetNumber;
         this.updateDisplay();
@@ -92,21 +123,31 @@ class NumberMatchGame {
             this.timerDisplayEl.classList.add('active');
             this.startTimer();
         } else {
-            this.timerDisplayEl.classList.remove('active', 'warning', 'danger');
+            this.timerDisplayEl.classList.remove('active', 'warning', 'danger', 'frozen');
         }
     }
 
     startTimer() {
         this.stopTimer();
         this.timerInterval = setInterval(() => {
-            this.timeLeft--;
-            this.updateTimerDisplay();
-            
-            if (this.timeLeft <= 0) {
-                this.stopTimer();
-                this.gameOver();
+            if (!this.isTimerPaused) {
+                this.timeLeft--;
+                this.updateTimerDisplay();
+                
+                if (this.timeLeft <= 0) {
+                    this.stopTimer();
+                    this.gameOver();
+                }
             }
         }, 1000);
+    }
+
+    pauseTimer() {
+        this.isTimerPaused = true;
+    }
+
+    resumeTimer() {
+        this.isTimerPaused = false;
     }
 
     stopTimer() {
@@ -114,6 +155,7 @@ class NumberMatchGame {
             clearInterval(this.timerInterval);
             this.timerInterval = null;
         }
+        this.isTimerPaused = false;
     }
 
     updateTimerDisplay() {
@@ -215,6 +257,8 @@ class NumberMatchGame {
     }
 
     handleCellClick(row, col) {
+        if (this.bombMode) return;
+        
         const cellIndex = this.selectedCells.findIndex(
             c => c.row === row && c.col === col
         );
@@ -394,9 +438,13 @@ class NumberMatchGame {
         this.movesEl.textContent = this.moves;
         this.hintCountEl.textContent = this.hints;
         this.shuffleCountEl.textContent = this.shuffles;
+        this.bombCountEl.textContent = this.bombs;
+        this.freezeCountEl.textContent = this.freezes;
         
         this.hintBtn.disabled = this.hints <= 0;
         this.shuffleBtn.disabled = this.shuffles <= 0;
+        this.bombBtn.disabled = this.bombs <= 0 || this.bombMode;
+        this.freezeBtn.disabled = this.freezes <= 0 || this.freezeActive || this.gameMode !== 'timed';
         
         this.updateComboDisplay();
     }
@@ -506,6 +554,125 @@ class NumberMatchGame {
         this.renderBoard();
         this.animateNewCells();
         this.playSound('shuffle');
+    }
+
+    activateBomb() {
+        if (this.bombs <= 0 || this.bombMode) return;
+        
+        this.bombMode = true;
+        this.bombs--;
+        this.updateDisplay();
+        
+        document.querySelectorAll('.number-cell').forEach(cell => {
+            cell.classList.add('bomb-target');
+        });
+        
+        this.boardEl.addEventListener('click', this.handleBombClick.bind(this), { once: true });
+        this.playSound('select');
+    }
+
+    handleBombClick(e) {
+        const cell = e.target.closest('.number-cell');
+        if (!cell) {
+            this.cancelBomb();
+            return;
+        }
+        
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        
+        document.querySelectorAll('.number-cell').forEach(c => {
+            c.classList.remove('bomb-target');
+        });
+        
+        cell.classList.add('removing');
+        setTimeout(() => {
+            this.grid[row][col] = null;
+            this.fillEmptySpaces();
+            this.bombMode = false;
+            this.updateDisplay();
+            this.playSound('success');
+        }, 400);
+    }
+
+    cancelBomb() {
+        this.bombMode = false;
+        this.bombs++;
+        document.querySelectorAll('.number-cell').forEach(c => {
+            c.classList.remove('bomb-target');
+        });
+        this.updateDisplay();
+    }
+
+    activateFreeze() {
+        if (this.freezes <= 0 || this.freezeActive || this.gameMode !== 'timed') return;
+        
+        this.freezes--;
+        this.freezeActive = true;
+        this.timerDisplayEl.classList.add('frozen');
+        this.pauseTimer();
+        this.updateDisplay();
+        this.playSound('bonus');
+        
+        setTimeout(() => {
+            this.freezeActive = false;
+            this.timerDisplayEl.classList.remove('frozen');
+            this.resumeTimer();
+            this.updateDisplay();
+        }, 10000);
+    }
+
+    openShop() {
+        this.pauseTimer();
+        this.shopScoreEl.textContent = this.score;
+        this.updateShopItems();
+        this.shopModal.classList.add('show');
+    }
+
+    closeShop() {
+        this.shopModal.classList.remove('show');
+        this.resumeTimer();
+    }
+
+    updateShopItems() {
+        this.shopItems.forEach(item => {
+            const price = parseInt(item.dataset.price);
+            if (this.score < price) {
+                item.classList.add('disabled');
+            } else {
+                item.classList.remove('disabled');
+            }
+        });
+    }
+
+    buyItem(itemType) {
+        const price = this.prices[itemType];
+        if (this.score < price) {
+            this.playSound('clear');
+            return;
+        }
+        
+        this.score -= price;
+        
+        switch(itemType) {
+            case 'hint':
+                this.hints++;
+                break;
+            case 'shuffle':
+                this.shuffles++;
+                break;
+            case 'bomb':
+                this.bombs++;
+                break;
+            case 'freeze':
+                this.freezes++;
+                break;
+        }
+        
+        this.updateDisplay();
+        this.shopScoreEl.textContent = this.score;
+        this.updateShopItems();
+        this.playSound('success');
     }
 
     showQuickScore(earnedScore) {
