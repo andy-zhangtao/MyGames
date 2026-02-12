@@ -1,0 +1,426 @@
+/* ========================================
+   MyGames - 儿童游戏集合样式表
+   
+   设计理念：
+   - 温暖柔和的色彩，不刺眼
+   - 圆润的形状，亲和友好
+   - 流畅的动画，增添乐趣
+   ======================================== */
+
+/* ----------------------------------------
+   CSS 变量 - 主题配色
+   方便后续自定义主题
+   ---------------------------------------- */
+:root {
+    /* 主色调 - 温暖的橙黄渐变 */
+    --primary-light: #FFE5B4;
+    --primary: #FFB347;
+    --primary-dark: #FF8C42;
+    
+    /* 辅助色 - 柔和的蓝绿色 */
+    --secondary-light: #B8E6CF;
+    --secondary: #7DD3AC;
+    --secondary-dark: #4CAF7D;
+    
+    /* 点缀色 - 梦幻粉紫 */
+    --accent: #FFB6C1;
+    --accent-dark: #FF91A4;
+    
+    /* 中性色 */
+    --bg-gradient-start: #FFF8E7;
+    --bg-gradient-end: #E8F4F8;
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --text-primary: #4A4A4A;
+    --text-secondary: #7A7A7A;
+    --text-light: #A0A0A0;
+    
+    /* 尺寸 */
+    --radius-sm: 12px;
+    --radius-md: 20px;
+    --radius-lg: 28px;
+    --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.08);
+    --shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.12);
+    
+    /* 过渡 */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ----------------------------------------
+   基础重置和全局样式
+   ---------------------------------------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+    min-height: 100vh;
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* ----------------------------------------
+   Hero 区域 - 欢迎头部
+   ---------------------------------------- */
+.hero {
+    position: relative;
+    padding: 60px 24px 80px;
+    text-align: center;
+    overflow: hidden;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    display: inline-block;
+}
+
+.hero-icon .bounce {
+    display: inline-block;
+    animation: bounce 2s ease-in-out infinite;
+}
+
+.hero-title {
+    font-family: 'ZCOOL KuaiLe', 'Nunito', sans-serif;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--accent-dark) 50%, var(--secondary-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+}
+
+.hero-subtitle {
+    font-size: clamp(1rem, 3vw, 1.25rem);
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* 浮动装饰元素 */
+.floating-elements {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.float-item {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    font-size: 28px;
+    opacity: 0.6;
+    animation: float 4s ease-in-out infinite;
+    animation-delay: var(--delay);
+}
+
+/* ----------------------------------------
+   游戏网格区域
+   ---------------------------------------- */
+.games-section {
+    padding: 40px 0 80px;
+}
+
+.games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 24px;
+}
+
+/* ----------------------------------------
+   游戏卡片
+   ---------------------------------------- */
+.game-card {
+    position: relative;
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 32px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform var(--transition-slow), box-shadow var(--transition-slow);
+    box-shadow: var(--shadow-soft);
+    border: 2px solid transparent;
+    overflow: hidden;
+}
+
+.game-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--accent), var(--secondary));
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.game-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-hover);
+}
+
+.game-card:hover::before {
+    opacity: 1;
+}
+
+.game-card:active {
+    transform: translateY(-4px) scale(1.01);
+}
+
+/* 游戏图标 */
+.game-icon {
+    font-size: 56px;
+    margin-bottom: 16px;
+    display: inline-block;
+    transition: transform var(--transition-normal);
+}
+
+.game-card:hover .game-icon {
+    transform: scale(1.15) rotate(5deg);
+}
+
+/* 游戏标题 */
+.game-title {
+    font-family: 'ZCOOL KuaiLe', 'Nunito', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+/* 游戏描述 */
+.game-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}
+
+/* 游戏标签 */
+.game-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: linear-gradient(135deg, var(--primary-light), var(--primary));
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.game-badge.badge-soon {
+    background: linear-gradient(135deg, #E0E0E0, #BDBDBD);
+    color: var(--text-secondary);
+}
+
+/* 即将推出卡片样式 */
+.game-card.coming-soon {
+    opacity: 0.7;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.game-card.coming-soon:hover {
+    opacity: 0.9;
+}
+
+/* ----------------------------------------
+   页脚
+   ---------------------------------------- */
+.footer {
+    padding: 40px 24px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.footer-text {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.footer-text .heart {
+    display: inline-block;
+    animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+.footer-copy {
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+/* ----------------------------------------
+   动画关键帧
+   ---------------------------------------- */
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    25% {
+        transform: translateY(-10px) rotate(5deg);
+    }
+    75% {
+        transform: translateY(5px) rotate(-5deg);
+    }
+}
+
+@keyframes heartbeat {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+}
+
+/* 卡片入场动画 */
+@keyframes cardEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.game-card {
+    animation: cardEntrance 0.6s ease-out backwards;
+}
+
+.game-card:nth-child(1) { animation-delay: 0.1s; }
+.game-card:nth-child(2) { animation-delay: 0.15s; }
+.game-card:nth-child(3) { animation-delay: 0.2s; }
+.game-card:nth-child(4) { animation-delay: 0.25s; }
+.game-card:nth-child(5) { animation-delay: 0.3s; }
+.game-card:nth-child(6) { animation-delay: 0.35s; }
+.game-card:nth-child(7) { animation-delay: 0.4s; }
+.game-card:nth-child(8) { animation-delay: 0.45s; }
+
+/* ----------------------------------------
+   响应式设计
+   ---------------------------------------- */
+
+/* 平板 */
+@media (max-width: 768px) {
+    .hero {
+        padding: 40px 20px 60px;
+    }
+    
+    .hero-icon {
+        font-size: 48px;
+    }
+    
+    .games-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 20px;
+    }
+    
+    .game-card {
+        padding: 24px 20px;
+    }
+    
+    .game-icon {
+        font-size: 48px;
+    }
+}
+
+/* 手机 */
+@media (max-width: 480px) {
+    .hero {
+        padding: 32px 16px 48px;
+    }
+    
+    .hero-icon {
+        font-size: 40px;
+    }
+    
+    .hero-title {
+        letter-spacing: 1px;
+    }
+    
+    .games-section {
+        padding: 24px 0 60px;
+    }
+    
+    .container {
+        padding: 0 16px;
+    }
+    
+    .games-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .game-card {
+        padding: 20px 16px;
+    }
+    
+    .game-icon {
+        font-size: 44px;
+        margin-bottom: 12px;
+    }
+    
+    .game-title {
+        font-size: 1.2rem;
+    }
+    
+    .float-item {
+        font-size: 20px;
+    }
+    
+    .footer {
+        padding: 24px 16px;
+    }
+}
+
+/* 减少动画（用户偏好设置） */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

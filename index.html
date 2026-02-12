@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MyGames - 专为小朋友打造的游戏天地">
+    <meta name="keywords" content="儿童游戏, 小游戏, 在线游戏, 益智游戏">
+    <title>🎮 MyGames - 快乐游戏天地</title>
+    
+    <!-- Google Fonts: 可爱但不过于幼稚 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- ========================================
+         页面主体结构
+         ======================================== -->
+    
+    <!-- 顶部欢迎区域 -->
+    <header class="hero">
+        <div class="hero-content">
+            <div class="hero-icon">
+                <span class="bounce">🌟</span>
+            </div>
+            <h1 class="hero-title">欢迎来到游戏天地</h1>
+            <p class="hero-subtitle">选择你喜欢的游戏，开始快乐之旅吧！</p>
+        </div>
+        
+        <!-- 装饰性浮动元素 -->
+        <div class="floating-elements">
+            <span class="float-item" style="--delay: 0s; --x: 10%; --y: 20%;">🎈</span>
+            <span class="float-item" style="--delay: 1s; --x: 85%; --y: 15%;">🌈</span>
+            <span class="float-item" style="--delay: 2s; --x: 5%; --y: 70%;">🦋</span>
+            <span class="float-item" style="--delay: 0.5s; --x: 90%; --y: 65%;">⭐</span>
+        </div>
+    </header>
+
+    <!-- ========================================
+         游戏网格区域
+         使用 CSS Grid 布局，方便扩展
+         ======================================== -->
+    <main class="games-section">
+        <div class="container">
+            <div class="games-grid">
+                
+                <!-- 游戏 1: 拼图游戏 -->
+                <article class="game-card" data-game="puzzle">
+                    <div class="game-icon">
+                        <span>🧩</span>
+                    </div>
+                    <h3 class="game-title">拼图大冒险</h3>
+                    <p class="game-desc">把碎片拼成美丽的图画</p>
+                    <div class="game-badge">益智</div>
+                </article>
+
+                <!-- 游戏 2: 记忆翻牌 -->
+                <article class="game-card" data-game="memory">
+                    <div class="game-icon">
+                        <span>🎴</span>
+                    </div>
+                    <h3 class="game-title">记忆翻翻乐</h3>
+                    <p class="game-desc">记住位置，找到相同的卡片</p>
+                    <div class="game-badge">记忆</div>
+                </article>
+
+                <!-- 游戏 3: 打地鼠 -->
+                <article class="game-card" data-game="whack">
+                    <div class="game-icon">
+                        <span>🔨</span>
+                    </div>
+                    <h3 class="game-title">打地鼠</h3>
+                    <p class="game-desc">眼疾手快，看谁打得准</p>
+                    <div class="game-badge">反应</div>
+                </article>
+
+                <!-- 游戏 4: 数字连线 -->
+                <article class="game-card" data-game="connect">
+                    <div class="game-icon">
+                        <span>🔢</span>
+                    </div>
+                    <h3 class="game-title">数字连连看</h3>
+                    <p class="game-desc">按顺序连接数字</p>
+                    <div class="game-badge">数字</div>
+                </article>
+
+                <!-- 游戏 5: 涂色画板 -->
+                <article class="game-card" data-game="coloring">
+                    <div class="game-icon">
+                        <span>🎨</span>
+                    </div>
+                    <h3 class="game-title">彩虹画板</h3>
+                    <p class="game-desc">用画笔创作你的作品</p>
+                    <div class="game-badge">创意</div>
+                </article>
+
+                <!-- 游戏 6: 贪吃蛇 -->
+                <article class="game-card" data-game="snake">
+                    <div class="game-icon">
+                        <span>🐍</span>
+                    </div>
+                    <h3 class="game-title">贪吃蛇</h3>
+                    <p class="game-desc">控制小蛇吃掉食物</p>
+                    <div class="game-badge">经典</div>
+                </article>
+
+                <!-- 游戏 7: 跳跃小人（占位） -->
+                <article class="game-card coming-soon" data-game="jump">
+                    <div class="game-icon">
+                        <span>🏃</span>
+                    </div>
+                    <h3 class="game-title">跳跃大冒险</h3>
+                    <p class="game-desc">即将上线，敬请期待</p>
+                    <div class="game-badge badge-soon">即将推出</div>
+                </article>
+
+                <!-- 游戏 8: 消消乐（占位） -->
+                <article class="game-card coming-soon" data-game="match">
+                    <div class="game-icon">
+                        <span>💎</span>
+                    </div>
+                    <h3 class="game-title">宝石消消乐</h3>
+                    <p class="game-desc">即将上线，敬请期待</p>
+                    <div class="game-badge badge-soon">即将推出</div>
+                </article>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- ========================================
+         页脚
+         ======================================== -->
+    <footer class="footer">
+        <div class="container">
+            <p class="footer-text">
+                Made with <span class="heart">❤️</span> for kids
+            </p>
+            <p class="footer-copy">© 2025 MyGames - 快乐游戏天地</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
