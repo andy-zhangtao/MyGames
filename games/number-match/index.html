@@ -25,14 +25,25 @@
                 <span class="target-label">目标</span>
                 <span class="target-number" id="target">10</span>
             </div>
+            <div class="timer-display" id="timer-display">
+                <span class="timer-icon">⏱️</span>
+                <span class="timer-value" id="timer">30</span>
+            </div>
             <div class="combo-display" id="combo-display">
                 <span class="combo-icon">🔥</span>
                 <span class="combo-value">x1</span>
             </div>
-            <div class="moves-display">
-                <span class="moves-label">步数</span>
-                <span class="moves-value" id="moves">0</span>
-            </div>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="normal">
+                <span class="mode-emoji">🎮</span>
+                <span class="mode-name">普通模式</span>
+            </button>
+            <button class="mode-btn" data-mode="timed">
+                <span class="mode-emoji">⏰</span>
+                <span class="mode-name">限时挑战</span>
+            </button>
         </div>
 
         <div class="current-sum" id="current-sum">

@@ -11,6 +11,9 @@ class NumberMatchGame {
         this.combo = 0;
         this.hints = 3;
         this.shuffles = 2;
+        this.gameMode = 'normal';
+        this.timeLeft = 30;
+        this.timerInterval = null;
         
         this.initElements();
         this.bindEvents();
@@ -39,6 +42,9 @@ class NumberMatchGame {
         this.modalScore = document.getElementById('modal-score');
         this.modalBtn = document.getElementById('modal-btn');
         this.celebrationEl = document.getElementById('celebration');
+        this.timerDisplayEl = document.getElementById('timer-display');
+        this.timerEl = document.getElementById('timer');
+        this.modeBtns = document.querySelectorAll('.mode-btn');
     }
 
     bindEvents() {
@@ -57,17 +63,110 @@ class NumberMatchGame {
                 this.startNewGame();
             });
         });
+
+        this.modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.gameMode = btn.dataset.mode;
+                this.startNewGame();
+            });
+        });
     }
 
     startNewGame() {
+        this.stopTimer();
         this.grid = [];
         this.selectedCells = [];
         this.moves = 0;
         this.combo = 0;
+        this.timeLeft = 30;
         
         this.targetEl.textContent = this.targetNumber;
         this.updateDisplay();
+        this.updateTimerDisplay();
         this.generateGrid();
+        this.renderBoard();
+
+        if (this.gameMode === 'timed') {
+            this.timerDisplayEl.classList.add('active');
+            this.startTimer();
+        } else {
+            this.timerDisplayEl.classList.remove('active', 'warning', 'danger');
+        }
+    }
+
+    startTimer() {
+        this.stopTimer();
+        this.timerInterval = setInterval(() => {
+            this.timeLeft--;
+            this.updateTimerDisplay();
+            
+            if (this.timeLeft <= 0) {
+                this.stopTimer();
+                this.gameOver();
+            }
+        }, 1000);
+    }
+
+    stopTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+    }
+
+    updateTimerDisplay() {
+        this.timerEl.textContent = this.timeLeft;
+        
+        this.timerDisplayEl.classList.remove('warning', 'danger');
+        if (this.timeLeft <= 5) {
+            this.timerDisplayEl.classList.add('danger');
+        } else if (this.timeLeft <= 10) {
+            this.timerDisplayEl.classList.add('warning');
+        }
+    }
+
+    addTimeBonus(seconds) {
+        this.timeLeft += seconds;
+        this.updateTimerDisplay();
+        this.showTimeBonus(seconds);
+        this.playSound('bonus');
+    }
+
+    showTimeBonus(seconds) {
+        const bonus = document.createElement('div');
+        bonus.className = 'time-bonus';
+        bonus.textContent = `+${seconds}s`;
+        this.timerDisplayEl.style.position = 'relative';
+        this.timerDisplayEl.appendChild(bonus);
+        setTimeout(() => bonus.remove(), 800);
+    }
+
+    gameOver() {
+        const highScore = this.getHighScore();
+        const isNewRecord = this.score > highScore;
+        
+        if (isNewRecord) {
+            this.saveProgress();
+        }
+
+        this.showMessage(
+            isNewRecord ? '🏆' : '⏰',
+            isNewRecord ? '新纪录！' : '时间到！',
+            `最终得分: ${this.score}分`,
+            '再玩一次'
+        );
+    }
+
+    showMessage(emoji, title, message, btnText = '继续') {
+        this.modalEmoji.textContent = emoji;
+        this.modalTitle.textContent = title;
+        this.modalMessage.textContent = message;
+        this.modalScore.textContent = '';
+        this.modalBtn.textContent = btnText;
+        this.modal.classList.add('show');
+    }
         this.renderBoard();
     }
 
@@ -209,6 +308,11 @@ class NumberMatchGame {
         const earnedScore = baseScore + comboBonus;
         
         this.score += earnedScore;
+
+        if (this.gameMode === 'timed') {
+            const timeBonus = Math.floor(Math.random() * 3) + 2;
+            this.addTimeBonus(timeBonus);
+        }
         
         this.animateRemoval(() => {
             this.removeSelectedCells();
@@ -443,16 +547,9 @@ class NumberMatchGame {
         this.modal.classList.add('show');
     }
 
-    showMessage(emoji, title, message) {
-        this.modalEmoji.textContent = emoji;
-        this.modalTitle.textContent = title;
-        this.modalMessage.textContent = message;
-        this.modalScore.textContent = '';
-        this.modal.classList.add('show');
-    }
-
     closeModal() {
         this.modal.classList.remove('show');
+        this.modalBtn.textContent = '继续游戏';
         this.updateSelection();
     }
 
@@ -493,7 +590,8 @@ class NumberMatchGame {
             success: { freq: 800, duration: 0.2, type: 'sine' },
             clear: { freq: 300, duration: 0.1, type: 'sine' },
             hint: { freq: 500, duration: 0.15, type: 'triangle' },
-            shuffle: { freq: 350, duration: 0.2, type: 'square' }
+            shuffle: { freq: 350, duration: 0.2, type: 'square' },
+            bonus: { freq: 1000, duration: 0.15, type: 'sine' }
         };
         
         const sound = sounds[type] || sounds.select;
