@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎱 超级弹珠台 - MyGames</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Microsoft YaHei', cursive, sans-serif;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+        }
+
+        /* 游戏容器 */
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* 顶部信息栏 */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%);
+            padding: 15px 30px;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #fff;
+            font-size: 1.8rem;
+            text-shadow: 0 0 15px rgba(255, 200, 100, 0.8), 2px 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .score-panel {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .score-item {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 8px 20px;
+            border-radius: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .score-item span:first-child {
+            font-size: 1.2rem;
+        }
+
+        .score-item span:last-child {
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 1.3rem;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        /* 控制按钮 */
+        .control-buttons {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #FF6B9D, #C44569);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(255, 107, 157, 0.5);
+        }
+
+        .btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(135deg, #6C63FF, #4834DF);
+            box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4);
+        }
+
+        .btn.secondary:hover {
+            box-shadow: 0 8px 25px rgba(108, 99, 255, 0.5);
+        }
+
+        .btn.home {
+            background: linear-gradient(135deg, #43e97b, #38f9d7);
+            box-shadow: 0 4px 15px rgba(67, 233, 123, 0.4);
+        }
+
+        .btn.home:hover {
+            box-shadow: 0 8px 25px rgba(67, 233, 123, 0.5);
+        }
+
+        /* 力量条 */
+        .power-bar-container {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+
+        .power-bar-container.visible {
+            opacity: 1;
+        }
+
+        .power-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #43e97b 0%, #f9d423 50%, #FF6B6B 100%);
+            border-radius: 12px;
+            transition: width 0.05s;
+        }
+
+        .power-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            font-size: 0.9rem;
+        }
+
+        /* 关卡信息弹窗 */
+        .level-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,220,255,0.95));
+            padding: 40px 60px;
+            border-radius: 30px;
+            text-align: center;
+            z-index: 200;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 4px solid #FF6B9D;
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .level-popup.visible {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .level-popup h2 {
+            font-size: 2.5rem;
+            color: #6C63FF;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0 #fff;
+        }
+
+        .level-popup p {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+        }
+
+        .level-popup .target-score {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .level-popup .btn {
+            font-size: 1.2rem;
+            padding: 15px 40px;
+        }
+
+        /* 提示文字 */
+        .tips {
+            position: fixed;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 10px 25px;
+            border-radius: 20px;
+            color: #fff;
+            font-size: 0.9rem;
+            z-index: 100;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .tips span {
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        /* 物品标签 */
+        .object-label {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            color: #6C63FF;
+            font-weight: bold;
+            pointer-events: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 50;
+        }
+
+        /* Canvas 样式 */
+        canvas {
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header {
+                padding: 10px 15px;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.3rem;
+            }
+
+            .score-panel {
+                gap: 10px;
+            }
+
+            .score-item {
+                padding: 5px 12px;
+                font-size: 0.85rem;
+            }
+
+            .btn {
+                padding: 10px 18px;
+                font-size: 0.9rem;
+            }
+
+            .power-bar-container {
+                width: 200px;
+                bottom: 80px;
+            }
+
+            .level-popup {
+                padding: 25px 30px;
+                margin: 0 20px;
+            }
+
+            .level-popup h2 {
+                font-size: 1.8rem;
+            }
+
+            .tips {
+                font-size: 0.75rem;
+                padding: 8px 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.1rem;
+            }
+
+            .control-buttons {
+                gap: 8px;
+            }
+
+            .btn {
+                padding: 8px 14px;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* 得分动画 */
+        .score-popup {
+            position: absolute;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+            animation: scoreFloat 1s ease-out forwards;
+            z-index: 150;
+        }
+
+        @keyframes scoreFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50px) scale(1.5);
+            }
+        }
+
+        /* 背景装饰 */
+        .bg-decoration {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-decoration" id="bgDecoration"></div>
+
+    <div id="game-container">
+        <!-- 顶部信息栏 -->
+        <div class="header">
+            <h1>🎱 超级弹珠台</h1>
+            <div class="score-panel">
+                <div class="score-item">
+                    <span>⭐</span>
+                    <span>得分:</span>
+                    <span id="score">0</span>
+                </div>
+                <div class="score-item">
+                    <span>🎯</span>
+                    <span>关卡:</span>
+                    <span id="level">1</span>
+                </div>
+                <div class="score-item">
+                    <span>🏆</span>
+                    <span>目标:</span>
+                    <span id="target">100</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏画布 -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- 力量条 -->
+        <div class="power-bar-container" id="powerBarContainer">
+            <div class="power-bar" id="powerBar"></div>
+            <div class="power-label" id="powerLabel">按住蓄力!</div>
+        </div>
+
+        <!-- 提示 -->
+        <div class="tips" id="tips">
+            💡 <span>按住鼠标</span> 蓄力 • <span>拖动</span> 调整角度 • <span>松开</span> 发射!
+        </div>
+
+        <!-- 控制按钮 -->
+        <div class="control-buttons">
+            <button class="btn home" onclick="goHome()">🏠 返回首页</button>
+            <button class="btn secondary" onclick="resetBall()">🔄 重置弹珠</button>
+            <button class="btn" onclick="restartGame()">🔃 重新开始</button>
+        </div>
+
+        <!-- 关卡弹窗 -->
+        <div class="level-popup" id="levelPopup">
+            <h2 id="popupTitle">🎉 关卡完成!</h2>
+            <p id="popupMessage">恭喜你通过了这一关!</p>
+            <div class="target-score" id="popupScore"></div>
+            <button class="btn" id="popupBtn" onclick="startNextLevel()">继续挑战!</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
