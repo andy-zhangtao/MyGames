@@ -1187,6 +1187,18 @@ function initUI() {
         toggleLabelsBtn.classList.toggle('active', !isLabelsVisible);
     });
 
+    const planetButtonsContainer = document.getElementById('planetButtons');
+
+    planetButtonsContainer.querySelectorAll('[data-planet]').forEach(btn => {
+        const planetKey = btn.getAttribute('data-planet');
+        if (planetKey && planets[planetKey]) {
+            btn.addEventListener('click', () => {
+                showPlanetInfo(planetKey);
+                focusOnPlanet(planetKey);
+            });
+        }
+    });
+
     // 彗星模式按钮
     const cometModeBtn = document.getElementById('cometModeBtn');
     const cometButtons = document.getElementById('cometButtons');
