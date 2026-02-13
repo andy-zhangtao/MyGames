@@ -18,10 +18,12 @@ class WhackAMoleGame {
         this.currentMole = null;
         this.doubleActive = false;
         this.slowActive = false;
+        this.consecutiveMisses = 0;
         
         this.freezes = 2;
         this.doubles = 1;
         this.slows = 2;
+        this.rockets = 1;
         
         this.progress = {
             highScore: 0,
@@ -74,6 +76,8 @@ class WhackAMoleGame {
         this.doubleCountEl = document.getElementById('double-count');
         this.slowBtn = document.getElementById('slow-btn');
         this.slowCountEl = document.getElementById('slow-count');
+        this.rocketBtn = document.getElementById('rocket-btn');
+        this.rocketCountEl = document.getElementById('rocket-count');
         this.carrotCountEl = document.getElementById('carrot-count');
         this.highScoreEl = document.getElementById('high-score');
         this.accuracyEl = document.getElementById('accuracy');
@@ -137,6 +141,7 @@ class WhackAMoleGame {
         this.freezeBtn.addEventListener('click', () => this.useFreeze());
         this.doubleBtn.addEventListener('click', () => this.useDouble());
         this.slowBtn.addEventListener('click', () => this.useSlow());
+        this.rocketBtn.addEventListener('click', () => this.useRocket());
 
         document.addEventListener('mousemove', (e) => this.updateCursorPosition(e));
         
@@ -211,6 +216,8 @@ class WhackAMoleGame {
         this.slows = 2;
         this.doubleActive = false;
         this.slowActive = false;
+        this.consecutiveMisses = 0;
+        this.rockets = 1;
 
         this.createBoard();
         this.updateDisplay();
@@ -320,6 +327,7 @@ class WhackAMoleGame {
     hideCurrentMole() {
         if (this.currentMole && this.currentMole.mole) {
             this.currentMole.mole.classList.remove('show');
+            this.currentMole.mole.textContent = '';
         }
         this.currentMole = null;
     }
@@ -354,6 +362,7 @@ class WhackAMoleGame {
         mole.classList.add('hit');
         this.hits++;
         this.combo++;
+        this.consecutiveMisses = 0;
         
         if (this.combo > this.maxCombo) {
             this.maxCombo = this.combo;
@@ -395,15 +404,20 @@ class WhackAMoleGame {
     missMole(mole) {
         if (!mole.classList.contains('show')) return;
         
-        mole.classList.add('miss');
+        mole.classList.remove('show', 'miss', 'golden', 'rainbow', 'bomb', 'hit');
+        mole.textContent = '';
+        
         this.misses++;
         this.combo = 0;
+        this.consecutiveMisses++;
+        
+        if (this.consecutiveMisses >= 3) {
+            this.playSound('laugh');
+            this.showCharacterMessage('miss');
+            this.consecutiveMisses = 0;
+        }
         
         this.updateComboDisplay();
-        
-        setTimeout(() => {
-            mole.classList.remove('show', 'miss');
-        }, 300);
     }
 
     swingHammer() {
@@ -515,6 +529,58 @@ class WhackAMoleGame {
         }, 10000);
     }
 
+    useRocket() {
+        if (this.rockets <= 0 || !this.isPlaying || this.isPaused) return;
+        
+        this.rockets--;
+        this.updateDisplay();
+        
+        const holes = document.querySelectorAll('.mole-hole');
+        let totalPoints = 0;
+        
+        holes.forEach((hole, index) => {
+            const mole = hole.querySelector('.mole');
+            
+            const moleType = this.moleTypes.normal;
+            mole.textContent = moleType.emoji;
+            mole.dataset.type = 'normal';
+            mole.dataset.points = moleType.points;
+            mole.classList.remove('hit', 'miss', 'golden', 'rainbow', 'bomb');
+            mole.classList.add('show');
+            
+            let points = moleType.points;
+            if (this.doubleActive) points *= 2;
+            
+            totalPoints += points;
+            
+            mole.classList.add('hit');
+            
+            const rect = hole.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            this.showHitEffect(x, y, points);
+            
+            setTimeout(() => {
+                mole.classList.remove('show', 'hit');
+                mole.textContent = '';
+            }, 300);
+        });
+        
+        this.hits += 9;
+        this.score += totalPoints;
+        this.combo += 9;
+        if (this.combo > this.maxCombo) {
+            this.maxCombo = this.combo;
+        }
+        this.consecutiveMisses = 0;
+        this.updateComboDisplay();
+        this.updateDisplay();
+        
+        this.playSound('rocket');
+        this.createConfetti(50);
+        this.showCharacterMessage('combo');
+    }
+
     gameOver() {
         this.isPlaying = false;
         this.stopTimer();
@@ -602,6 +668,7 @@ class WhackAMoleGame {
         this.freezeCountEl.textContent = this.freezes;
         this.doubleCountEl.textContent = this.doubles;
         this.slowCountEl.textContent = this.slows;
+        this.rocketCountEl.textContent = this.rockets;
         
         this.carrotCountEl.textContent = this.progress.totalCarrots;
         this.highScoreEl.textContent = this.progress.highScore;
@@ -613,6 +680,7 @@ class WhackAMoleGame {
         this.freezeBtn.disabled = this.freezes <= 0 || !this.isPlaying;
         this.doubleBtn.disabled = this.doubles <= 0 || !this.isPlaying || this.doubleActive;
         this.slowBtn.disabled = this.slows <= 0 || !this.isPlaying || this.slowActive;
+        this.rocketBtn.disabled = this.rockets <= 0 || !this.isPlaying;
     }
 
     createConfetti(count) {
@@ -647,7 +715,9 @@ class WhackAMoleGame {
                 miss: { freq: 300, duration: 0.1, type: 'triangle' },
                 win: { freq: 800, duration: 0.3, type: 'sine' },
                 bonus: { freq: 1000, duration: 0.15, type: 'sine' },
-                start: { freq: 500, duration: 0.15, type: 'sine' }
+                start: { freq: 500, duration: 0.15, type: 'sine' },
+                laugh: { freq: 400, duration: 0.5, type: 'sawtooth' },
+                rocket: { freq: 150, duration: 0.4, type: 'sawtooth' }
             };
 
             const sound = sounds[type] || sounds.hit;

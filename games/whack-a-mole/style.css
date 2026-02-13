@@ -662,6 +662,21 @@ body {
     box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
 }
 
+.tool-btn.rocket-btn {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    border: 2px solid #ff9800;
+}
+
+.tool-btn.rocket-btn:hover {
+    box-shadow: 0 0 20px rgba(255, 152, 0, 0.6);
+    transform: translateY(-3px) scale(1.05);
+}
+
+.tool-btn.rocket-btn:disabled {
+    opacity: 0.4;
+    border: none;
+}
+
 .tool-icon {
     font-size: 1.5rem;
 }
