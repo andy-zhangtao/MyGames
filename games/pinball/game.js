@@ -27,6 +27,9 @@ let windmill, windmillConstraint;
 let obstacles = [];
 let targetZone;
 let levelComplete = false;
+let springs = [];
+let powerUps = [];
+let powerUpInterval = null;
 
 // 画布尺寸
 let canvasWidth = 800;
@@ -44,7 +47,12 @@ const levelConfigs = {
         ],
         hasWindmill: false,
         hasDominoes: false,
-        hasDropBox: false
+        hasDropBox: false,
+        springs: [
+            { x: 250, y: 530 },
+            { x: 550, y: 530 }
+        ],
+        hasPowerUps: true
     },
     2: {
         name: "旋转挑战",
@@ -58,7 +66,12 @@ const levelConfigs = {
         hasWindmill: true,
         windmillPos: { x: 400, y: 300 },
         hasDominoes: false,
-        hasDropBox: true
+        hasDropBox: true,
+        springs: [
+            { x: 200, y: 520 },
+            { x: 600, y: 520 }
+        ],
+        hasPowerUps: true
     },
     3: {
         name: "多米诺大师",
@@ -72,7 +85,190 @@ const levelConfigs = {
         windmillPos: { x: 550, y: 350 },
         hasDominoes: true,
         dominoesStart: { x: 250, y: 400 },
-        hasDropBox: true
+        hasDropBox: true,
+        springs: [
+            { x: 150, y: 540 },
+            { x: 400, y: 540 },
+            { x: 650, y: 540 }
+        ],
+        hasPowerUps: true
+    },
+    4: {
+        name: "弹跳迷宫",
+        targetScore: 400,
+        bumpers: [
+            { x: 200, y: 150, radius: 28 },
+            { x: 350, y: 120, radius: 32 },
+            { x: 500, y: 180, radius: 25 },
+            { x: 150, y: 280, radius: 30 },
+            { x: 300, y: 250, radius: 35 },
+            { x: 450, y: 320, radius: 28 },
+            { x: 600, y: 280, radius: 32 },
+            { x: 250, y: 400, radius: 25 },
+            { x: 400, y: 450, radius: 30 },
+            { x: 550, y: 400, radius: 28 }
+        ],
+        hasWindmill: false,
+        hasDominoes: false,
+        hasDropBox: true,
+        springs: [
+            { x: 150, y: 520 },
+            { x: 400, y: 520 },
+            { x: 650, y: 520 }
+        ],
+        hasPowerUps: true
+    },
+    5: {
+        name: "漂浮群岛",
+        targetScore: 500,
+        bumpers: [
+            { x: 250, y: 200, radius: 35 },
+            { x: 550, y: 200, radius: 35 },
+            { x: 400, y: 350, radius: 40 },
+            { x: 200, y: 450, radius: 30 },
+            { x: 600, y: 450, radius: 30 }
+        ],
+        hasWindmill: true,
+        windmillPos: { x: 400, y: 275 },
+        hasDominoes: true,
+        dominoesStart: { x: 150, y: 300 },
+        hasDropBox: true,
+        springs: [
+            { x: 200, y: 530 },
+            { x: 600, y: 530 }
+        ],
+        hasPowerUps: true
+    },
+    6: {
+        name: "旋转双翼",
+        targetScore: 600,
+        bumpers: [
+            { x: 200, y: 150, radius: 28 },
+            { x: 600, y: 150, radius: 28 },
+            { x: 300, y: 280, radius: 32 },
+            { x: 500, y: 280, radius: 32 },
+            { x: 400, y: 200, radius: 38 },
+            { x: 400, y: 380, radius: 30 },
+            { x: 200, y: 450, radius: 25 },
+            { x: 600, y: 450, radius: 25 }
+        ],
+        hasWindmill: true,
+        windmillPos: { x: 400, y: 330 },
+        hasDominoes: false,
+        hasDropBox: true,
+        springs: [
+            { x: 100, y: 520 },
+            { x: 400, y: 520 },
+            { x: 700, y: 520 }
+        ],
+        hasPowerUps: true
+    },
+    7: {
+        name: "时空隧道",
+        targetScore: 700,
+        bumpers: [
+            { x: 150, y: 120, radius: 25 },
+            { x: 650, y: 120, radius: 25 },
+            { x: 280, y: 200, radius: 30 },
+            { x: 520, y: 200, radius: 30 },
+            { x: 400, y: 150, radius: 35 },
+            { x: 200, y: 300, radius: 28 },
+            { x: 600, y: 300, radius: 28 },
+            { x: 400, y: 280, radius: 32 },
+            { x: 300, y: 420, radius: 25 },
+            { x: 500, y: 420, radius: 25 },
+            { x: 400, y: 500, radius: 35 }
+        ],
+        hasWindmill: false,
+        hasDominoes: true,
+        dominoesStart: { x: 180, y: 380 },
+        hasDropBox: true,
+        springs: [
+            { x: 150, y: 540 },
+            { x: 650, y: 540 }
+        ],
+        hasPowerUps: true
+    },
+    8: {
+        name: "爆裂组合",
+        targetScore: 800,
+        bumpers: [
+            { x: 400, y: 150, radius: 40 },
+            { x: 200, y: 250, radius: 30 },
+            { x: 600, y: 250, radius: 30 },
+            { x: 300, y: 350, radius: 35 },
+            { x: 500, y: 350, radius: 35 },
+            { x: 400, y: 450, radius: 38 }
+        ],
+        hasWindmill: true,
+        windmillPos: { x: 400, y: 300 },
+        hasDominoes: true,
+        dominoesStart: { x: 220, y: 400 },
+        hasDropBox: true,
+        springs: [
+            { x: 250, y: 520 },
+            { x: 550, y: 520 }
+        ],
+        hasPowerUps: true
+    },
+    9: {
+        name: "重力漩涡",
+        targetScore: 900,
+        bumpers: [
+            { x: 400, y: 120, radius: 30 },
+            { x: 250, y: 180, radius: 28 },
+            { x: 550, y: 180, radius: 28 },
+            { x: 180, y: 280, radius: 32 },
+            { x: 620, y: 280, radius: 32 },
+            { x: 320, y: 280, radius: 35 },
+            { x: 480, y: 280, radius: 35 },
+            { x: 250, y: 380, radius: 28 },
+            { x: 550, y: 380, radius: 28 },
+            { x: 400, y: 480, radius: 40 }
+        ],
+        hasWindmill: true,
+        windmillPos: { x: 400, y: 230 },
+        hasDominoes: true,
+        dominoesStart: { x: 200, y: 350 },
+        hasDropBox: true,
+        springs: [
+            { x: 100, y: 530 },
+            { x: 400, y: 530 },
+            { x: 700, y: 530 }
+        ],
+        hasPowerUps: true
+    },
+    10: {
+        name: "终极挑战",
+        targetScore: 1000,
+        bumpers: [
+            { x: 200, y: 100, radius: 30 },
+            { x: 600, y: 100, radius: 30 },
+            { x: 400, y: 150, radius: 35 },
+            { x: 150, y: 220, radius: 28 },
+            { x: 650, y: 220, radius: 28 },
+            { x: 300, y: 200, radius: 32 },
+            { x: 500, y: 200, radius: 32 },
+            { x: 400, y: 280, radius: 40 },
+            { x: 200, y: 320, radius: 28 },
+            { x: 600, y: 320, radius: 28 },
+            { x: 300, y: 380, radius: 30 },
+            { x: 500, y: 380, radius: 30 },
+            { x: 400, y: 450, radius: 35 },
+            { x: 150, y: 480, radius: 25 },
+            { x: 650, y: 480, radius: 25 }
+        ],
+        hasWindmill: true,
+        windmillPos: { x: 400, y: 350 },
+        hasDominoes: true,
+        dominoesStart: { x: 170, y: 420 },
+        hasDropBox: true,
+        springs: [
+            { x: 200, y: 520 },
+            { x: 400, y: 520 },
+            { x: 600, y: 520 }
+        ],
+        hasPowerUps: true
     }
 };
 
@@ -130,6 +326,10 @@ function createLevel(level) {
     bumpers = [];
     dominoes = [];
     obstacles = [];
+    springs = [];
+    powerUps = [];
+    
+    stopPowerUpDrops();
     
     const config = levelConfigs[level];
     targetScore = config.targetScore;
@@ -150,6 +350,14 @@ function createLevel(level) {
     
     if (config.hasDropBox) {
         createDropBox();
+    }
+    
+    if (config.springs) {
+        createSprings(config.springs);
+    }
+    
+    if (config.hasPowerUps) {
+        setTimeout(() => startPowerUpDrops(), 2000);
     }
     
     createTargetZone();
@@ -427,6 +635,99 @@ function createTargetZone() {
     Composite.add(engine.world, targetZone);
 }
 
+// 创建地面弹簧（粉红色长方形）
+function createSprings(springConfigs) {
+    const springOptions = {
+        isStatic: true,
+        render: {
+            fillStyle: '#FF6B9D',
+            strokeStyle: '#C44569',
+            lineWidth: 3
+        },
+        label: 'spring',
+        scoreValue: 20
+    };
+
+    springConfigs.forEach(config => {
+        const spring = Bodies.rectangle(config.x, config.y, 60, 20, {
+            ...springOptions
+        });
+        spring.restitution = 2.5;
+        springs.push(spring);
+        Composite.add(engine.world, spring);
+    });
+}
+
+// 创建掉落道具
+function createPowerUp(x, y) {
+    const powerUpTypes = [
+        { emoji: '⭐', name: 'doubleScore', score: 50, color: '#FFD700' },
+        { emoji: '🚀', name: 'speedBoost', score: 30, color: '#FF6B6B' },
+        { emoji: '💎', name: 'bonus', score: 40, color: '#06B6D4' },
+        { emoji: '🎁', name: 'mystery', score: Math.random() > 0.5 ? 60 : 20, color: '#8B5CF6' }
+    ];
+    
+    const type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+    
+    const powerUp = Bodies.circle(x, y, 15, {
+        isStatic: false,
+        friction: 0.1,
+        frictionAir: 0.02,
+        restitution: 0.6,
+        render: {
+            fillStyle: type.color,
+            strokeStyle: '#fff',
+            lineWidth: 2
+        },
+        label: 'powerUp',
+        powerUpType: type,
+        emoji: type.emoji
+    });
+    
+    powerUps.push(powerUp);
+    Composite.add(engine.world, powerUp);
+    
+    // 创建道具标签
+    const label = document.createElement('div');
+    label.className = 'object-label';
+    label.textContent = type.emoji;
+    label.style.left = (x - 10) + 'px';
+    label.style.top = (y - 10) + 'px';
+    document.getElementById('game-container').appendChild(label);
+    powerUp.labelElement = label;
+    
+    // 10秒后消失
+    setTimeout(() => {
+        if (powerUp && powerUp.labelElement) {
+            powerUp.labelElement.remove();
+            Composite.remove(engine.world, powerUp);
+            powerUps = powerUps.filter(p => p !== powerUp);
+        }
+    }, 10000);
+}
+
+// 开始随机掉落道具
+function startPowerUpDrops() {
+    if (powerUpInterval) {
+        clearInterval(powerUpInterval);
+    }
+    
+    powerUpInterval = setInterval(() => {
+        // 随机从天空掉落道具
+        const x = 100 + Math.random() * (canvasWidth - 200);
+        const y = -20; // 从画布上方开始
+        createPowerUp(x, y);
+    }, 3000 + Math.random() * 2000); // 每3-5秒掉落一个
+}
+
+// 停止掉落道具
+function stopPowerUpDrops() {
+    if (powerUpInterval) {
+        clearInterval(powerUpInterval);
+        powerUpInterval = null;
+    }
+}
+
 // 设置事件监听
 function setupEventListeners() {
     const canvas = document.getElementById('gameCanvas');
@@ -536,7 +837,6 @@ function onCollision(event) {
             const bumper = pair.bodyA.label === 'bumper' ? pair.bodyA : pair.bodyB;
             addScore(bumper.scoreValue || 10, bumper.position);
             
-            // 弹跳效果 - 使用 scale 方法
             Body.scale(bumper, 1.15, 1.15);
             setTimeout(() => Body.scale(bumper, 1/1.15, 1/1.15), 100);
         }
@@ -563,7 +863,89 @@ function onCollision(event) {
             const dropBall = pair.bodyA.label === 'dropBall' ? pair.bodyA : pair.bodyB;
             addScore(dropBall.scoreValue || 15, dropBall.position);
         }
+        
+        // 弹簧碰撞 - 给弹珠一个向上弹跳力
+        if (labels.includes('ball') && labels.includes('spring')) {
+            const spring = pair.bodyA.label === 'spring' ? pair.bodyA : pair.bodyB;
+            addScore(spring.scoreValue || 20, spring.position);
+            
+            Body.scale(spring, 1.2, 1.2);
+            setTimeout(() => Body.scale(spring, 1/1.2, 1/1.2), 150);
+            
+            // 弹跳效果
+            Body.applyForce(ball, { x: 0, y: -0.05 }, ball.position);
+            showSpringEffect(spring.position);
+        }
+        
+        // 道具碰撞
+        if (labels.includes('ball') && labels.includes('powerUp')) {
+            const powerUp = pair.bodyA.label === 'powerUp' ? pair.bodyA : pair.bodyB;
+            if (powerUp.labelElement) {
+                powerUp.labelElement.remove();
+            }
+            Composite.remove(engine.world, powerUp);
+            powerUps = powerUps.filter(p => p !== powerUp);
+            
+            applyPowerUp(powerUp.powerUpType, powerUp.position);
+        }
     });
+}
+
+// 应用道具效果
+function applyPowerUp(powerUpType, position) {
+    let bonus = 0;
+    let effectText = '';
+    
+    switch(powerUpType.name) {
+        case 'doubleScore':
+            bonus = powerUpType.score;
+            effectText = '双倍得分! +' + bonus;
+            break;
+        case 'speedBoost':
+            bonus = powerUpType.score;
+            Body.applyForce(ball, { x: 0, y: -0.02 }, ball.position);
+            effectText = '加速! +' + bonus;
+            break;
+        case 'bonus':
+        case 'mystery':
+            bonus = powerUpType.score;
+            effectText = powerUpType.name === 'bonus' ? '奖励! +' + bonus : '神秘! +' + bonus;
+            break;
+    }
+    
+    addScore(bonus, position);
+    showPowerUpEffect(effectText, position);
+}
+
+// 显示弹簧弹跳效果
+function showSpringEffect(position) {
+    const popup = document.createElement('div');
+    popup.className = 'score-popup';
+    popup.textContent = '🚀 BOING!';
+    popup.style.left = position.x + 'px';
+    popup.style.top = position.y + 'px';
+    popup.style.color = '#00D4FF';
+    
+    const container = document.getElementById('game-container');
+    container.appendChild(popup);
+    
+    setTimeout(() => popup.remove(), 800);
+}
+
+// 显示道具效果
+function showPowerUpEffect(text, position) {
+    const popup = document.createElement('div');
+    popup.className = 'score-popup';
+    popup.textContent = text;
+    popup.style.left = position.x + 'px';
+    popup.style.top = position.y + 'px';
+    popup.style.color = '#FFD700';
+    popup.style.fontSize = '1.3rem';
+    
+    const container = document.getElementById('game-container');
+    container.appendChild(popup);
+    
+    setTimeout(() => popup.remove(), 1200);
 }
 
 // 添加分数
@@ -621,7 +1003,7 @@ function showLevelComplete() {
     
     title.textContent = '🎉 关卡完成!';
     
-    if (currentLevel < 3) {
+    if (currentLevel < 10) {
         message.textContent = `太棒了! 你的得分: ${score}`;
         scoreText.textContent = `准备进入关卡 ${currentLevel + 1}`;
         btn.textContent = '继续挑战!';
@@ -644,17 +1026,19 @@ function showLevelPopup() {
     const message = document.getElementById('popupMessage');
     const scoreText = document.getElementById('popupScore');
     const btn = document.getElementById('popupBtn');
-    
+
     const config = levelConfigs[currentLevel];
-    
+
     title.textContent = `🎯 关卡 ${currentLevel}: ${config.name}`;
     message.textContent = getLevelDescription(currentLevel);
     scoreText.textContent = `目标分数: ${config.targetScore}`;
     btn.textContent = '开始游戏!';
     btn.onclick = () => {
         popup.classList.remove('visible');
+        // 隐藏提示文字
+        document.getElementById('tips').style.opacity = '0';
     };
-    
+
     popup.classList.add('visible');
 }
 
@@ -663,14 +1047,21 @@ function getLevelDescription(level) {
     const descriptions = {
         1: '学习基本操作，碰撞弹跳器得分!',
         2: '挑战旋转风车，击落漂浮球!',
-        3: '终极挑战! 触发多米诺连锁反应!'
+        3: '终极挑战! 触发多米诺连锁反应!',
+        4: '穿越弹跳迷宫，寻找最佳路径!',
+        5: '在漂浮的岛屿间跳跃!',
+        6: '双翼旋转，双倍挑战!',
+        7: '进入时空隧道，穿越重重障碍!',
+        8: '爆裂组合! 多元素混合挑战!',
+        9: '感受重力漩涡的威力!',
+        10: '终极挑战! 展现你的真正实力!'
     };
     return descriptions[level];
 }
 
 // 开始下一关
 function startNextLevel() {
-    if (currentLevel < 3) {
+    if (currentLevel < 10) {
         currentLevel++;
         score = 0;
         levelComplete = false;
@@ -689,6 +1080,21 @@ function resetBall() {
     if (launchConstraint) {
         Composite.remove(engine.world, launchConstraint);
     }
+    
+    // 清理道具
+    powerUps.forEach(p => {
+        if (p.labelElement) {
+            p.labelElement.remove();
+        }
+    });
+    powerUps = [];
+    
+    stopPowerUpDrops();
+    setTimeout(() => {
+        if (levelConfigs[currentLevel].hasPowerUps) {
+            startPowerUpDrops();
+        }
+    }, 1000);
     
     createBall();
     levelComplete = false;
@@ -739,7 +1145,6 @@ function gameLoop() {
         document.getElementById('powerBar').style.width = power + '%';
         document.getElementById('powerLabel').textContent = Math.round(power) + '%';
         
-        // 更新弹珠位置预览
         if (ball && launchConstraint) {
             const pullDist = power * 0.3;
             Body.setPosition(ball, {
@@ -749,17 +1154,43 @@ function gameLoop() {
         }
     }
     
-    // 检查弹珠是否出界
     if (ball) {
         if (ball.position.y > canvasHeight + 50 ||
             ball.position.x < -50 ||
             ball.position.x > canvasWidth + 50) {
             resetBall();
         }
+        
+        // 更新道具标签位置
+        powerUps.forEach(p => {
+            if (p.labelElement) {
+                p.labelElement.style.left = (p.position.x - 10) + 'px';
+                p.labelElement.style.top = (p.position.y - 10) + 'px';
+            }
+        });
     }
     
     requestAnimationFrame(gameLoop);
 }
+
+// 调试函数：跳转到指定关卡（用于测试）
+window.jumpToLevel = function(level) {
+    if (level >= 1 && level <= 10) {
+        currentLevel = level;
+        score = 0;
+        levelComplete = false;
+        document.getElementById('score').textContent = '0';
+        if(document.getElementById('levelPopup')) {
+            document.getElementById('levelPopup').classList.remove('visible');
+        }
+        createLevel(level);
+        setTimeout(showLevelPopup, 300);
+        console.log(`跳转到关卡 ${level}`);
+    }
+};
+
+console.log('提示：使用 jumpToLevel(n) 跳转到关卡 n (1-10)');
+
 
 // 初始化并启动游戏
 window.onload = function() {
