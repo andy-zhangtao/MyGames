@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌌 太阳系探索 - MyGames</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nunito', 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        /* 顶部标题 */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+            padding: 20px 30px;
+            z-index: 100;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .header h1 {
+            color: #fff;
+            font-size: 2.5rem;
+            text-shadow: 0 0 20px rgba(255, 200, 100, 0.5);
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #aaa;
+            font-size: 1rem;
+        }
+
+        /* 控制面板 */
+        .controls {
+            position: fixed;
+            top: 120px;
+            left: 20px;
+            background: rgba(20, 20, 40, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            min-width: 280px;
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+        }
+
+        .controls h2 {
+            color: #fff;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            color: #ccc;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6C63FF, #FF6B9D);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(108, 99, 255, 0.5);
+        }
+
+        .value-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 5px;
+        }
+
+        .value-display span {
+            color: #6C63FF;
+            font-weight: bold;
+        }
+
+        .toggle-btn {
+            background: linear-gradient(135deg, #6C63FF, #5a52d5);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            width: 100%;
+            margin-top: 5px;
+            transition: all 0.3s;
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 99, 255, 0.4);
+        }
+
+        .toggle-btn.active {
+            background: linear-gradient(135deg, #FF6B9D, #ff5a8c);
+        }
+
+        /* 行星信息面板 */
+        .planet-info {
+            position: fixed;
+            top: 120px;
+            right: 20px;
+            width: 320px;
+            background: rgba(20, 20, 40, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            color: white;
+            transform: translateX(400px);
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .planet-info.visible {
+            transform: translateX(0);
+        }
+
+        .planet-info h2 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, #6C63FF, #FF6B9D);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .planet-info .subtitle {
+            color: #aaa;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+
+        .planet-info .fact {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .planet-info .fact:last-child {
+            border-bottom: none;
+        }
+
+        .planet-info .fact-label {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .planet-info .fact-value {
+            color: #6C63FF;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+
+        /* 底部提示 */
+        .tips {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 40, 0.8);
+            padding: 12px 25px;
+            border-radius: 25px;
+            color: #aaa;
+            font-size: 0.9rem;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tips span {
+            color: #6C63FF;
+            font-weight: 600;
+        }
+
+        /* 行星按钮 */
+        .planet-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .planet-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .planet-btn:hover {
+            background: rgba(108, 99, 255, 0.3);
+            border-color: #6C63FF;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .controls {
+                top: auto;
+                bottom: 20px;
+                left: 20px;
+                right: 20px;
+                max-height: 40vh;
+                min-width: auto;
+            }
+
+            .planet-info {
+                top: 80px;
+                right: 20px;
+                left: 20px;
+                width: auto;
+                transform: translateY(-400px);
+            }
+
+            .planet-info.visible {
+                transform: translateY(0);
+            }
+
+            .tips {
+                bottom: auto;
+                top: 80px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <!-- 顶部标题 -->
+    <div class="header">
+        <h1>🌌 太阳系探索</h1>
+        <p>探索宇宙的奥秘，了解行星的运动规律</p>
+    </div>
+
+    <!-- 控制面板 -->
+    <div class="controls">
+        <h2>🎮 控制面板</h2>
+
+        <div class="control-group">
+            <label>🕐 时间流逝速度</label>
+            <input type="range" id="timeSpeed" min="0" max="10" step="0.1" value="1">
+            <div class="value-display">
+                <span>暂停</span>
+                <span id="timeValue">1.0x</span>
+                <span>最快</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>🔭 行星大小比例</label>
+            <input type="range" id="planetSize" min="0.5" max="3" step="0.1" value="1">
+            <div class="value-display">
+                <span>0.5x</span>
+                <span id="sizeValue">1.0x</span>
+                <span>3.0x</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>📏 轨道距离比例</label>
+            <input type="range" id="orbitDistance" min="0.5" max="2" step="0.1" value="1">
+            <div class="value-display">
+                <span>0.5x</span>
+                <span id="distanceValue">1.0x</span>
+                <span>2.0x</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <button class="toggle-btn" id="toggleOrbits">🔴 显示/隐藏轨道线</button>
+        </div>
+
+        <div class="control-group">
+            <button class="toggle-btn" id="toggleLabels">🏷️ 显示/隐藏标签</button>
+        </div>
+
+        <div class="control-group">
+            <label>🪐 快速定位</label>
+            <div class="planet-buttons" id="planetButtons">
+                <button class="planet-btn" data-planet="mercury">水星</button>
+                <button class="planet-btn" data-planet="venus">金星</button>
+                <button class="planet-btn" data-planet="earth">地球</button>
+                <button class="planet-btn" data-planet="mars">火星</button>
+                <button class="planet-btn" data-planet="jupiter">木星</button>
+                <button class="planet-btn" data-planet="saturn">土星</button>
+                <button class="planet-btn" data-planet="uranus">天王星</button>
+                <button class="planet-btn" data-planet="neptune">海王星</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>☄️ 彗星模式</label>
+            <button class="toggle-btn" id="cometModeBtn">开启彗星演示</button>
+            <div class="comet-buttons" id="cometButtons" style="display: none; margin-top: 10px;">
+                <button class="planet-btn" data-comet="halley">哈雷彗星</button>
+                <button class="planet-btn" data-comet="hale-bopp">海尔-波普</button>
+                <button class="planet-btn" data-comet="hyakutake">百武彗星</button>
+            </div>
+        </div>
+
+
+        </div>
+
+    <!-- 流星雨信息面板 -->
+    <div class="planet-info" id="planetInfo">
+        <button class="close-btn" id="closeInfo">×</button>
+        <h2 id="planetName">地球</h2>
+        <p class="subtitle" id="planetSubtitle">我们的家园</p>
+        <div id="planetFacts"></div>
+    </div>
+
+    <!-- 彗星信息面板 -->
+    <div class="planet-info" id="cometInfo" style="display: none;">
+        <button class="close-btn" id="closeCometInfo">×</button>
+        <h2 id="cometName">哈雷彗星</h2>
+        <p class="subtitle" id="cometSubtitle">最著名的短周期彗星</p>
+        <div id="cometFacts"></div>
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <p style="color: #aaa; font-size: 0.85rem; margin-bottom: 5px;">当前位置</p>
+            <p id="cometPosition" style="color: #6C63FF; font-weight: 600; font-size: 1rem;">距离太阳: 0 AU</p>
+        </div>
+    </div>
+
+
+
+    <!-- 底部提示 -->
+    <div class="tips">
+        💡 <span>拖动</span> 旋转视角 • <span>滚动</span> 缩放 • <span>点击</span> 行星查看详情
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
