@@ -83,6 +83,12 @@ class NumberMatchGame {
             item.addEventListener('click', () => this.buyItem(item.dataset.item));
         });
         
+        this.shopModal.addEventListener('click', (e) => {
+            if (e.target === this.shopModal) {
+                this.closeShop();
+            }
+        });
+        
         this.diffBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 this.diffBtns.forEach(b => b.classList.remove('active'));
@@ -630,6 +636,8 @@ class NumberMatchGame {
     closeShop() {
         this.shopModal.classList.remove('show');
         this.resumeTimer();
+        this.selectedCells = [];
+        this.renderBoard();
     }
 
     updateShopItems() {
