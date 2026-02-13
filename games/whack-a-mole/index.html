@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>🔨 花园保卫战 - 小游戏乐园</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <a href="../../index.html" class="back-btn" aria-label="返回首页">←</a>
+            <h1 class="game-title">🌻 花园保卫战</h1>
+            <div class="score-display">
+                <span class="score-icon">🥕</span>
+                <span class="score-value" id="score">0</span>
+            </div>
+        </header>
+
+        <div class="character-panel" id="character-panel">
+            <div class="character-avatar">🐰</div>
+            <div class="character-speech" id="character-speech">
+                你好呀！快来帮我保护花园，赶走调皮的小地鼠！
+            </div>
+        </div>
+
+        <div class="game-info">
+            <div class="timer-display" id="timer-display">
+                <span class="timer-icon">⏱️</span>
+                <span class="timer-value" id="timer">60</span>
+            </div>
+            <div class="combo-display" id="combo-display">
+                <span class="combo-icon">🔥</span>
+                <span class="combo-value">x1</span>
+            </div>
+            <div class="hits-display">
+                <span class="hits-label">击中</span>
+                <span class="hits-value" id="hits">0</span>
+            </div>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="timed">
+                <span class="mode-emoji">⏰</span>
+                <span class="mode-name">限时挑战</span>
+            </button>
+            <button class="mode-btn" data-mode="endless">
+                <span class="mode-emoji">♾️</span>
+                <span class="mode-name">无尽模式</span>
+            </button>
+        </div>
+
+        <div class="difficulty-selector">
+            <button class="diff-btn active" data-level="1" data-speed="1500">
+                <span class="diff-emoji">🌱</span>
+                <span class="diff-name">简单</span>
+            </button>
+            <button class="diff-btn" data-level="2" data-speed="1200">
+                <span class="diff-emoji">🌿</span>
+                <span class="diff-name">普通</span>
+            </button>
+            <button class="diff-btn" data-level="3" data-speed="900">
+                <span class="diff-emoji">🌳</span>
+                <span class="diff-name">困难</span>
+            </button>
+            <button class="diff-btn" data-level="4" data-speed="600">
+                <span class="diff-emoji">🏔️</span>
+                <span class="diff-name">疯狂</span>
+            </button>
+        </div>
+
+        <div class="hammer-selector">
+            <button class="hammer-btn active" data-hammer="default">
+                <span class="hammer-icon">🔨</span>
+            </button>
+            <button class="hammer-btn" data-hammer="golden">
+                <span class="hammer-icon">⚒️</span>
+            </button>
+            <button class="hammer-btn" data-hammer="star">
+                <span class="hammer-icon">⭐</span>
+            </button>
+            <button class="hammer-btn" data-hammer="rainbow">
+                <span class="hammer-icon">🌈</span>
+            </button>
+        </div>
+
+        <div class="game-board-container">
+            <div class="garden-bg">
+                <div class="sun">☀️</div>
+                <div class="cloud cloud1">☁️</div>
+                <div class="cloud cloud2">☁️</div>
+                <div class="flower flower1">🌸</div>
+                <div class="flower flower2">🌼</div>
+                <div class="flower flower3">🌺</div>
+            </div>
+            <div class="game-board" id="game-board"></div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="action-btn start-btn" id="start-btn">
+                <span class="btn-icon">▶️</span>
+                <span class="btn-text">开始游戏</span>
+            </button>
+            <button class="action-btn pause-btn" id="pause-btn" disabled>
+                <span class="btn-icon">⏸️</span>
+                <span class="btn-text">暂停</span>
+            </button>
+        </div>
+
+        <div class="tool-buttons">
+            <button class="tool-btn" id="freeze-btn" title="时间冻结">
+                <span class="tool-icon">❄️</span>
+                <span class="tool-count" id="freeze-count">2</span>
+            </button>
+            <button class="tool-btn" id="double-btn" title="双倍得分">
+                <span class="tool-icon">✨</span>
+                <span class="tool-count" id="double-count">1</span>
+            </button>
+            <button class="tool-btn" id="slow-btn" title="减速">
+                <span class="tool-icon">🐢</span>
+                <span class="tool-count" id="slow-count">2</span>
+            </button>
+        </div>
+
+        <div class="collection-panel">
+            <div class="collection-item">
+                <span class="collection-icon">🥕</span>
+                <span class="collection-label">胡萝卜</span>
+                <span class="collection-value" id="carrot-count">0</span>
+            </div>
+            <div class="collection-item">
+                <span class="collection-icon">🏆</span>
+                <span class="collection-label">最高分</span>
+                <span class="collection-value" id="high-score">0</span>
+            </div>
+            <div class="collection-item">
+                <span class="collection-icon">🎯</span>
+                <span class="collection-label">命中率</span>
+                <span class="collection-value" id="accuracy">0%</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="result-modal">
+        <div class="modal-content">
+            <div class="modal-emoji" id="modal-emoji">🎉</div>
+            <h2 class="modal-title" id="modal-title">太棒了！</h2>
+            <p class="modal-message" id="modal-message">你保护了花园！</p>
+            <div class="modal-stats">
+                <div class="stat-item">
+                    <span class="stat-label">击中次数</span>
+                    <span class="stat-value" id="final-hits">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">最高连击</span>
+                    <span class="stat-value" id="final-combo">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">命中率</span>
+                    <span class="stat-value" id="final-accuracy">0%</span>
+                </div>
+            </div>
+            <div class="modal-score">
+                <span class="modal-score-label">得分</span>
+                <span class="modal-score-value" id="modal-score">+100</span>
+            </div>
+            <div class="modal-reward" id="modal-reward">
+                <span class="reward-icon">🥕</span>
+                <span class="reward-text">获得胡萝卜 x5</span>
+            </div>
+            <div class="star-rating" id="star-rating">
+                <span class="star">⭐</span>
+                <span class="star">⭐</span>
+                <span class="star">⭐</span>
+            </div>
+            <button class="modal-btn" id="modal-btn">再玩一次</button>
+        </div>
+    </div>
+
+    <div class="modal" id="start-modal">
+        <div class="modal-content start-content">
+            <div class="modal-emoji">🌻</div>
+            <h2 class="modal-title">花园保卫战</h2>
+            <div class="mole-guide">
+                <div class="mole-type">
+                    <span class="mole-emoji">🐹</span>
+                    <span class="mole-name">普通地鼠</span>
+                    <span class="mole-points">+1分</span>
+                </div>
+                <div class="mole-type">
+                    <span class="mole-emoji">🌟</span>
+                    <span class="mole-name">金色地鼠</span>
+                    <span class="mole-points">+3分</span>
+                </div>
+                <div class="mole-type">
+                    <span class="mole-emoji">🌈</span>
+                    <span class="mole-name">彩虹地鼠</span>
+                    <span class="mole-points">+5分</span>
+                </div>
+                <div class="mole-type danger">
+                    <span class="mole-emoji">💣</span>
+                    <span class="mole-name">炸弹</span>
+                    <span class="mole-points">-2分</span>
+                </div>
+            </div>
+            <p class="start-tip">💡 提示：连续击中可获得连击加成！</p>
+            <button class="modal-btn" id="start-modal-btn">开始游戏</button>
+        </div>
+    </div>
+
+    <div class="celebration" id="celebration"></div>
+
+    <div class="hit-effect" id="hit-effect"></div>
+
+    <div class="cursor-hammer" id="cursor-hammer">🔨</div>
+
+    <script src="game.js"></script>
+</body>
+</html>
