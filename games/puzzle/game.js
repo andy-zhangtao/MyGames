@@ -172,8 +172,7 @@ class PuzzleGame {
         try {
             const response = await fetch(imagePath, { method: 'HEAD' });
             return response.ok;
-        } catch (error) {
-            console.log(`Image check failed:`, imagePath, error);
+        } catch {
             return false;
         }
     }
