@@ -36,6 +36,14 @@ let bombs = [];
 let attemptsLeft = 5;
 let blackHoles = [];
 
+// 重力感应状态
+let gravityEnabled = false;
+let deviceOrientationGranted = false;
+let deviceBeta = 0;
+let deviceGamma = 0;
+let smoothedGravityX = 0;
+let smoothedGravityY = 0;
+
 // 画布尺寸
 let canvasWidth = 800;
 let canvasHeight = 600;
@@ -281,12 +289,13 @@ function init() {
     resizeCanvas();
     createEngine();
     createLevel(currentLevel);
+    checkDeviceOrientationSupport();
     setupEventListeners();
     createBackgroundStars();
-    
+
     runner = Runner.create();
     Runner.run(runner, engine);
-    
+
     showLevelPopup();
 }
 
@@ -322,6 +331,146 @@ function createEngine() {
     });
     
     Render.run(render);
+}
+
+// 检测设备方向传感器支持
+function checkDeviceOrientationSupport() {
+    const requestBtn = document.getElementById('requestOrientationBtn');
+
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceMotionEvent !== 'undefined') {
+        console.log('设备支持重力感应');
+        requestDeviceOrientationPermission();
+    } else {
+        console.log('设备不支持重力感应');
+        if (requestBtn) {
+            requestBtn.style.display = 'none';
+        }
+        const gravityToggle = document.getElementById('gravityToggle');
+        if (gravityToggle) {
+            gravityToggle.disabled = true;
+        }
+    }
+}
+
+// 请求设备方向传感器权限（iOS 13+）
+function requestDeviceOrientationPermission() {
+    if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) {
+        console.log('请求设备方向传感器权限...');
+        
+        DeviceOrientationEvent.requestPermission()
+            .then(response => {
+                if (response === 'granted') {
+                    deviceOrientationGranted = true;
+                    console.log('设备方向传感器权限已获得');
+                    
+                    const gravityToggle = document.getElementById('gravityToggle');
+                    if (gravityToggle) {
+                        gravityToggle.disabled = false;
+                    }
+                    
+                    const gravityBtn = document.getElementById('gravityBtn');
+                    if (gravityBtn) {
+                        gravityBtn.textContent = '🎯 重力感应: 关闭';
+                    }
+                    
+                    enableGravitySensor();
+                } else {
+                    console.log('设备方向传感器权限被拒绝');
+                    showGravityDeniedMessage();
+                }
+            })
+            .catch(error => {
+                console.error('请求设备方向传感器权限失败:', error);
+                showGravityDeniedMessage();
+            });
+    } else {
+        console.log('设备方向传感器不支持权限请求API,尝试直接使用');
+        deviceOrientationGranted = true;
+        enableGravitySensor();
+    }
+}
+
+// 启用重力传感器
+function enableGravitySensor() {
+    if (deviceOrientationGranted) {
+        window.addEventListener('deviceorientation', handleOrientationChange);
+        console.log('重力传感器已启用');
+    }
+}
+
+// 禁用重力传感器
+function disableGravitySensor() {
+    window.removeEventListener('deviceorientation', handleOrientationChange);
+    console.log('重力传感器已禁用');
+}
+
+// 处理设备方向变化
+function handleOrientationChange(event) {
+    if (!event.beta && !event.gamma) return;
+    
+    deviceBeta = event.beta || 0;
+    deviceGamma = event.gamma || 0;
+    
+    // 平滑处理重力值
+    const smoothingFactor = 0.1;
+    smoothedGravityX = smoothedGravityX * (1 - smoothingFactor) + deviceGamma * smoothingFactor;
+    smoothedGravityY = smoothedGravityY * (1 - smoothingFactor) + deviceBeta * smoothingFactor;
+    
+    // 限制重力范围(-1到1之间)
+    const maxGravity = 1.0;
+    const clampedGravityX = Math.max(-maxGravity, Math.min(maxGravity, smoothedGravityX / 45));
+    const clampedGravityY = Math.max(-maxGravity, Math.min(maxGravity, smoothedGravityY / 45));
+    
+    // 应用到物理引擎
+    updateEngineGravity(clampedGravityX, clampedGravityY);
+}
+
+// 更新物理引擎重力
+function updateEngineGravity(x, y) {
+    if (!engine) return;
+    
+    // 基础重力 + 设备重力影响
+    const baseGravityY = 0.8;
+    const gravityStrength = 0.5;
+    
+    engine.world.gravity.x = x * gravityStrength;
+    engine.world.gravity.y = baseGravityY - y * gravityStrength;
+    
+    console.log('重力更新:', { x: engine.world.gravity.x.toFixed(3), y: engine.world.gravity.y.toFixed(3) });
+}
+
+// 显示权限被拒绝消息
+function showGravityDeniedMessage() {
+    const container = document.getElementById('game-container');
+    const message = document.createElement('div');
+    message.className = 'gravity-message';
+    message.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 12px;
+            font-size: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            text-align: center;
+            max-width: 300px;
+        ">
+            <div style="font-size: 24px; margin-bottom: 10px;">📱</div>
+            <div>重力感应需要权限</div>
+            <div style="margin-top: 10px; font-size: 14px;">
+                请前往「设置」&gt;「隐私与安全」&gt;「动作与方向」
+                <br>开启「动作与方向」访问权限
+            </div>
+        </div>
+    `;
+    container.appendChild(message);
+    
+    setTimeout(() => message.remove(), 5000);
 }
 
 function createLevel(level) {
@@ -956,7 +1105,33 @@ function setupEventListeners() {
     
     // 窗口调整
     window.addEventListener('resize', onResize);
-}
+
+    // 重力感应开关
+    function toggleGravity() {
+        gravityEnabled = !gravityEnabled;
+        const gravityToggle = document.getElementById('gravityToggle');
+        const gravityBtn = document.getElementById('gravityBtn');
+        
+        if (gravityEnabled) {
+            gravityToggle.classList.add('active');
+            if (gravityBtn) {
+                gravityBtn.textContent = '🎯 重力感应: 开启';
+            }
+            enableGravitySensor();
+        } else {
+            gravityToggle.classList.remove('active');
+            if (gravityBtn) {
+                gravityBtn.textContent = '🎯 重力感应: 关闭';
+            }
+            disableGravitySensor();
+            // 重置重力为默认值
+            updateEngineGravity(0, 0);
+        }
+    }
+
+    function requestDeviceOrientationPermission() {
+        checkDeviceOrientationSupport();
+    }
 
 function onMouseDown(e) {
     const rect = e.target.getBoundingClientRect();

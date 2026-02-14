@@ -115,6 +115,13 @@
             transform: translateY(0) scale(0.98);
         }
 
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+            box-shadow: none;
+        }
+
         .btn.secondary {
             background: linear-gradient(135deg, #6C63FF, #4834DF);
             box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4);
@@ -122,6 +129,74 @@
 
         .btn.secondary:hover {
             box-shadow: 0 8px 25px rgba(108, 99, 255, 0.5);
+        }
+
+        .gravity-toggle {
+            background: linear-gradient(135deg, #10B981, #10B981);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .gravity-toggle:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
+        }
+
+        .gravity-toggle.active {
+            background: linear-gradient(135deg, #059669, #10B981);
+            box-shadow: 0 0 15px rgba(5, 150, 249, 0.6), 0 0 20px rgba(5, 151, 249, 0.8);
+        }
+
+        .request-orientation-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .request-orientation-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .gravity-message {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 12px;
+            font-size: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            text-align: center;
+            max-width: 300px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+
+        /* 重力感应权限请求按钮 -- 仅在需要权限时显示 */
+        .request-orientation-btn {
+            display: none;
         }
 
         .btn.home {
@@ -443,8 +518,14 @@
         <div class="control-buttons">
             <button class="btn home" onclick="goHome()">🏠 返回首页</button>
             <button class="btn secondary" onclick="resetBall()">🔄 重置弹珠</button>
+            <button class="btn" id="gravityToggle" onclick="toggleGravity()" disabled>🎯 重力感应</button>
             <button class="btn" onclick="restartGame()">🔃 重新开始</button>
         </div>
+
+        <!-- 重力感应权限请求按钮 -->
+        <button id="requestOrientationBtn" class="request-orientation-btn" onclick="requestDeviceOrientationPermission()">
+            📱 启用重力感应
+        </button>
 
         <!-- 关卡弹窗 -->
         <div class="level-popup" id="levelPopup">
