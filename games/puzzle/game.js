@@ -93,25 +93,90 @@ class PuzzleGame {
         document.getElementById('shop-stars-count').textContent = this.totalStars;
     }
 
-    loadRandomImage() {
+    async loadRandomImage() {
+        const imageList = ['1.png', '2.png', '3.png', '4.png', '5.png'];
+
+        const availableImages = [];
+
+        for (const filename of imageList) {
+            try {
+                const response = await fetch(`./images/${filename}`);
+                if (response.ok) {
+                    availableImages.push(filename);
+                }
+            } catch (error) {
+                console.log(`Image ${filename} not found:`, error);
+            }
+        }
+
+        if (availableImages.length > 0) {
+            const randomImage = availableImages[Math.floor(Math.random() * availableImages.length)];
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+
+            return new Promise((resolve) => {
+                img.onload = () => {
+                    const canvas = document.getElementById('cutting-canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    const maxSize = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxSize || height > maxSize) {
+                        const ratio = Math.min(maxSize / width, maxSize / height);
+                        width = width * ratio;
+                        height = height * ratio;
+                    }
+
+                    canvas.width = 800;
+                    canvas.height = 800;
+
+                    ctx.fillStyle = '#f0f0f0';
+                    ctx.fillRect(0, 0, 800, 800);
+
+                    const x = (800 - width) / 2;
+                    const y = (800 - height) / 2;
+
+                    ctx.drawImage(img, x, y, width, height);
+
+                    this.currentImage = canvas.toDataURL('image/png', 0.9);
+                    resolve();
+                };
+
+                img.onerror = () => {
+                    console.error('Failed to load image:', randomImage);
+                    this.generateFallbackImage();
+                    resolve();
+                };
+
+                img.src = `./images/${randomImage}`;
+            });
+        } else {
+            this.generateFallbackImage();
+        }
+    }
+
+    generateFallbackImage() {
         const canvas = document.getElementById('cutting-canvas');
         const ctx = canvas.getContext('2d');
 
-        canvas.width = 600;
-        canvas.height = 600;
+        canvas.width = 800;
+        canvas.height = 800;
 
-        const gradient = ctx.createLinearGradient(0, 0, 600, 600);
+        const gradient = ctx.createLinearGradient(0, 0, 800, 800);
         gradient.addColorStop(0, '#667eea');
         gradient.addColorStop(0.5, '#764ba2');
         gradient.addColorStop(1, '#f093fb');
 
         ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 600, 600);
+        ctx.fillRect(0, 0, 800, 800);
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
         for (let i = 0; i < 50; i++) {
-            const x = Math.random() * 600;
-            const y = Math.random() * 600;
+            const x = Math.random() * 800;
+            const y = Math.random() * 800;
             const radius = Math.random() * 50 + 20;
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -144,7 +209,7 @@ class PuzzleGame {
     createPuzzle() {
         this.pieces = [];
         const totalPieces = this.gridSize * this.gridSize;
-        const pieceSize = 600 / this.gridSize;
+        const pieceSize = 800 / this.gridSize;
 
         for (let i = 0; i < totalPieces; i++) {
             const row = Math.floor(i / this.gridSize);
@@ -186,7 +251,7 @@ class PuzzleGame {
         const grid = document.getElementById('puzzle-grid');
         grid.innerHTML = '';
 
-        const containerWidth = Math.min(window.innerWidth - 40, 600);
+        const containerWidth = Math.min(window.innerWidth - 40, 800);
         const pieceSize = Math.floor(containerWidth / this.gridSize);
 
         grid.style.gridTemplateColumns = `repeat(${this.gridSize}, ${pieceSize}px)`;
@@ -198,7 +263,7 @@ class PuzzleGame {
             pieceElement.style.width = `${pieceSize}px`;
             pieceElement.style.height = `${pieceSize}px`;
             pieceElement.style.backgroundImage = `url(${this.currentImage})`;
-            pieceElement.style.backgroundSize = `${600}px ${600}px`;
+            pieceElement.style.backgroundSize = `${800}px ${800}px`;
             pieceElement.style.backgroundPosition = piece.backgroundPosition;
             pieceElement.dataset.id = piece.id;
             pieceElement.dataset.index = index;
