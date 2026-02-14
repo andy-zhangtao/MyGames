@@ -95,86 +95,53 @@ class PuzzleGame {
 
     async loadRandomImage() {
         const imageList = ['1.png', '2.png', '3.png', '4.png', '5.png'];
+        const randomImage = imageList[Math.floor(Math.random() * imageList.length)];
 
-        const availableImages = [];
-        const loadPromises = [];
+        console.log('Attempting to load:', randomImage);
 
-        for (const filename of imageList) {
-            const promise = this.checkImageExists(`./images/${filename}`);
-            loadPromises.push(promise);
-        }
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
 
-        const results = await Promise.allSettled(loadPromises);
+        return new Promise((resolve) => {
+            img.onload = () => {
+                console.log('Image loaded successfully:', randomImage);
+                const canvas = document.getElementById('cutting-canvas');
+                const ctx = canvas.getContext('2d');
 
-        results.forEach((result, index) => {
-            if (result.status === 'fulfilled' && result.value) {
-                availableImages.push(imageList[index]);
-            }
+                const maxSize = 800;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxSize || height > maxSize) {
+                    const ratio = Math.min(maxSize / width, maxSize / height);
+                    width = width * ratio;
+                    height = height * ratio;
+                }
+
+                canvas.width = 800;
+                canvas.height = 800;
+
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(0, 0, 800, 800);
+
+                const x = (800 - width) / 2;
+                const y = (800 - height) / 2;
+
+                ctx.drawImage(img, x, y, width, height);
+
+                this.currentImage = canvas.toDataURL('image/png', 0.9);
+                resolve();
+            };
+
+            img.onerror = (e) => {
+                console.error('Failed to load image:', randomImage, e);
+                console.log('Using fallback image instead');
+                this.generateFallbackImage();
+                resolve();
+            };
+
+            img.src = `./images/${randomImage}`;
         });
-
-        console.log('Available images:', availableImages);
-
-        if (availableImages.length > 0) {
-            const randomIndex = Math.floor(Math.random() * availableImages.length);
-            const randomImage = availableImages[randomIndex];
-
-            console.log('Selected image:', randomImage);
-
-            const img = new Image();
-
-            return new Promise((resolve) => {
-                img.onload = () => {
-                    const canvas = document.getElementById('cutting-canvas');
-                    const ctx = canvas.getContext('2d');
-
-                    const maxSize = 800;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > maxSize || height > maxSize) {
-                        const ratio = Math.min(maxSize / width, maxSize / height);
-                        width = width * ratio;
-                        height = height * ratio;
-                    }
-
-                    canvas.width = 800;
-                    canvas.height = 800;
-
-                    ctx.fillStyle = '#f0f0f0';
-                    ctx.fillRect(0, 0, 800, 800);
-
-                    const x = (800 - width) / 2;
-                    const y = (800 - height) / 2;
-
-                    ctx.drawImage(img, x, y, width, height);
-
-                    this.currentImage = canvas.toDataURL('image/png', 0.9);
-                    console.log('Image loaded successfully');
-                    resolve();
-                };
-
-                img.onerror = (e) => {
-                    console.error('Failed to load image:', randomImage, e);
-                    this.generateFallbackImage();
-                    resolve();
-                };
-
-                const imagePath = new URL(randomImage, window.location.href).href;
-                img.src = imagePath;
-            });
-        } else {
-            console.log('No images found, using fallback');
-            this.generateFallbackImage();
-        }
-    }
-
-    async checkImageExists(imagePath) {
-        try {
-            const response = await fetch(imagePath, { method: 'HEAD' });
-            return response.ok;
-        } catch {
-            return false;
-        }
     }
 
     generateFallbackImage() {
