@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧩 拼图大冒险 - MyGames</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 返回按钮 -->
+    <a href="../index.html" class="back-button">
+        <span class="back-icon">←</span>
+        <span class="back-text">返回</span>
+    </a>
+
+    <!-- 难度选择界面 -->
+    <div id="difficulty-screen" class="screen">
+        <div class="screen-header">
+            <h1 class="game-title">🧩 拼图大冒险</h1>
+            <p class="game-subtitle">选择难度，开始挑战！</p>
+        </div>
+
+        <div class="difficulty-options">
+            <button class="difficulty-btn" data-size="3">
+                <div class="difficulty-icon">🌟</div>
+                <div class="difficulty-name">简单</div>
+                <div class="difficulty-size">3 × 3</div>
+            </button>
+
+            <button class="difficulty-btn" data-size="4">
+                <div class="difficulty-icon">⭐</div>
+                <div class="difficulty-name">中等</div>
+                <div class="difficulty-size">4 × 4</div>
+            </button>
+
+            <button class="difficulty-btn" data-size="5">
+                <div class="difficulty-icon">🌟</div>
+                <div class="difficulty-name">困难</div>
+                <div class="difficulty-size">5 × 5</div>
+            </button>
+
+            <button class="difficulty-btn" data-size="6">
+                <div class="difficulty-icon">⭐</div>
+                <div class="difficulty-name">专家</div>
+                <div class="difficulty-size">6 × 6</div>
+            </button>
+
+            <button class="difficulty-btn" data-size="8">
+                <div class="difficulty-icon">👑</div>
+                <div class="difficulty-name">大师</div>
+                <div class="difficulty-size">8 × 8</div>
+            </button>
+        </div>
+    </div>
+
+    <!-- 游戏主界面 -->
+    <div id="game-screen" class="screen hidden">
+        <div class="game-header">
+            <div class="game-info">
+                <div class="info-item">
+                    <span class="info-label">⏱️ 时间</span>
+                    <span class="info-value" id="timer">00:00</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">👣 步数</span>
+                    <span class="info-value" id="moves">0</span>
+                </div>
+            </div>
+
+            <div class="game-controls">
+                <button class="control-btn" id="preview-btn" title="查看原图">
+                    <span class="control-icon">👁️</span>
+                </button>
+                <button class="control-btn" id="reset-btn" title="重新开始">
+                    <span class="control-icon">🔄</span>
+                </button>
+                <button class="control-btn" id="back-to-menu-btn" title="返回选择">
+                    <span class="control-icon">📋</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 拼图区域 -->
+        <div class="puzzle-container">
+            <div id="puzzle-grid" class="puzzle-grid"></div>
+        </div>
+    </div>
+
+    <!-- 预览图弹窗 -->
+    <div id="preview-modal" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" id="preview-close">&times;</button>
+            <h2 class="modal-title">目标图片</h2>
+            <div class="preview-container">
+                <img id="preview-image" class="preview-image" alt="目标图片">
+            </div>
+        </div>
+    </div>
+
+    <!-- 完成弹窗 -->
+    <div id="complete-modal" class="modal hidden">
+        <div class="modal-content complete-content">
+            <button class="modal-close" id="complete-close">&times;</button>
+            <div class="complete-icon">🎉</div>
+            <h2 class="complete-title">太棒了！</h2>
+            <p class="complete-message">你成功完成了拼图！</p>
+            <div class="complete-stats">
+                <div class="stat-item">
+                    <span class="stat-label">⏱️ 用时</span>
+                    <span class="stat-value" id="complete-time">00:00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">👣 步数</span>
+                    <span class="stat-value" id="complete-moves">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">⭐ 星级</span>
+                    <span class="stat-value" id="complete-stars">⭐⭐⭐</span>
+                </div>
+            </div>
+            <div class="complete-actions">
+                <button class="btn btn-primary" id="play-again-btn">再玩一次</button>
+                <button class="btn btn-secondary" id="change-difficulty-btn">换个难度</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏的Canvas用于图片切割 -->
+    <canvas id="cutting-canvas" style="display: none;"></canvas>
+
+    <script src="game.js"></script>
+</body>
+</html>

@@ -30,6 +30,9 @@ let levelComplete = false;
 let springs = [];
 let powerUps = [];
 let powerUpInterval = null;
+let boostZones = [];
+let mines = [];
+let bombs = [];
 
 // 画布尺寸
 let canvasWidth = 800;
@@ -328,39 +331,44 @@ function createLevel(level) {
     obstacles = [];
     springs = [];
     powerUps = [];
-    
+    boostZones = [];
+    mines = [];
+    bombs = [];
+
     stopPowerUpDrops();
-    
+
     const config = levelConfigs[level];
     targetScore = config.targetScore;
     document.getElementById('target').textContent = targetScore;
     document.getElementById('level').textContent = level;
-    
+
     createWalls();
     createLaunchArea();
     createBumpers(config.bumpers);
-    
+
     if (config.hasWindmill) {
         createWindmill(config.windmillPos.x, config.windmillPos.y);
     }
-    
+
     if (config.hasDominoes) {
         createDominoes(config.dominoesStart.x, config.dominoesStart.y);
     }
-    
+
     if (config.hasDropBox) {
         createDropBox();
     }
-    
+
     if (config.springs) {
         createSprings(config.springs);
     }
-    
+
     if (config.hasPowerUps) {
         setTimeout(() => startPowerUpDrops(), 2000);
     }
-    
+
     createTargetZone();
+    createBoostZones();
+    createMinesAndBombs();
     createBall();
 }
 
@@ -658,6 +666,120 @@ function createSprings(springConfigs) {
     });
 }
 
+// 创建增强弹力区域（底部随机出现）
+function createBoostZones() {
+    const zoneCount = 2 + Math.floor(Math.random() * 3); // 2-4个增强区域
+    const zoneWidth = 80;
+    const zoneHeight = 15;
+    const zoneY = canvasHeight - 40;
+
+    for (let i = 0; i < zoneCount; i++) {
+        const zoneX = 150 + Math.random() * (canvasWidth - 300);
+
+        const boostZone = Bodies.rectangle(zoneX, zoneY, zoneWidth, zoneHeight, {
+            isStatic: true,
+            isSensor: true,
+            render: {
+                fillStyle: 'rgba(0, 255, 255, 0.6)',
+                strokeStyle: '#00FFFF',
+                lineWidth: 4,
+                strokeDash: [5, 3]
+            },
+            label: 'boostZone',
+            boostMultiplier: 2.0,
+            scoreValue: 15
+        });
+
+        boostZones.push(boostZone);
+        Composite.add(engine.world, boostZone);
+    }
+}
+
+function createMinesAndBombs() {
+    const totalItems = Math.floor(Math.random() * 5) + 1;
+    const mineCount = Math.floor(Math.random() * totalItems);
+    const bombCount = totalItems - mineCount;
+
+    const allItems = [];
+    const minDistance = 120;
+
+    for (let i = 0; i < totalItems; i++) {
+        let x, y, validPosition;
+        let attempts = 0;
+
+        do {
+            validPosition = true;
+            x = 150 + Math.random() * (canvasWidth - 300);
+            y = 150 + Math.random() * (canvasHeight - 350);
+
+            for (const item of allItems) {
+                const distance = Math.sqrt(Math.pow(x - item.x, 2) + Math.pow(y - item.y, 2));
+                if (distance < minDistance) {
+                    validPosition = false;
+                    break;
+                }
+            }
+            attempts++;
+        } while (!validPosition && attempts < 50);
+
+        if (validPosition) {
+            allItems.push({ x, y, type: i < mineCount ? 'mine' : 'bomb' });
+        }
+    }
+
+    allItems.forEach(item => {
+        if (item.type === 'mine') {
+            const mine = Bodies.circle(item.x, item.y, 20, {
+                isStatic: true,
+                isSensor: true,
+                render: {
+                    fillStyle: '#666666',
+                    strokeStyle: '#333333',
+                    lineWidth: 3
+                },
+                label: 'mine',
+                scoreValue: -5
+            });
+
+            mines.push(mine);
+            Composite.add(engine.world, mine);
+
+            const label = document.createElement('div');
+            label.className = 'object-label';
+            label.textContent = '💣';
+            label.style.left = (item.x - 12) + 'px';
+            label.style.top = (item.y - 12) + 'px';
+            label.style.fontSize = '24px';
+            document.getElementById('game-container').appendChild(label);
+            mine.labelElement = label;
+        } else {
+            const bomb = Bodies.circle(item.x, item.y, 25, {
+                isStatic: true,
+                isSensor: true,
+                render: {
+                    fillStyle: '#FF4444',
+                    strokeStyle: '#CC0000',
+                    lineWidth: 3
+                },
+                label: 'bomb',
+                scoreValue: -10
+            });
+
+            bombs.push(bomb);
+            Composite.add(engine.world, bomb);
+
+            const label = document.createElement('div');
+            label.className = 'object-label';
+            label.textContent = '💥';
+            label.style.left = (item.x - 15) + 'px';
+            label.style.top = (item.y - 15) + 'px';
+            label.style.fontSize = '30px';
+            document.getElementById('game-container').appendChild(label);
+            bomb.labelElement = label;
+        }
+    });
+}
+
 // 创建掉落道具
 function createPowerUp(x, y) {
     const powerUpTypes = [
@@ -750,12 +872,29 @@ function onMouseDown(e) {
     const rect = e.target.getBoundingClientRect();
     mouseX = e.clientX - rect.left;
     mouseY = e.clientY - rect.top;
-    
-    const dist = Vector.magnitude(Vector.sub(ball.position, { x: mouseX, y: mouseY }));
-    
-    if (dist < 50 && launchConstraint) {
+
+    // 扩大点击判定区域 - 在发射平台附近的矩形区域内点击即可
+    const launchZoneX = launchStartX - 100;
+    const launchZoneY = launchStartY - 100;
+    const launchZoneWidth = 200;
+    const launchZoneHeight = 200;
+
+    const inLaunchZone = mouseX >= launchZoneX && mouseX <= launchZoneX + launchZoneWidth &&
+                        mouseY >= launchZoneY && mouseY <= launchZoneY + launchZoneHeight;
+
+    if (inLaunchZone && launchConstraint) {
         isCharging = true;
         power = 0;
+
+        // 根据点击位置设置初始角度
+        const dx = mouseX - launchStartX;
+        const dy = mouseY - launchStartY;
+        launchAngle = Math.atan2(dy, dx);
+
+        // 限制角度范围 - 只允许向右上方发射
+        if (launchAngle > -Math.PI / 6) launchAngle = -Math.PI / 6;
+        if (launchAngle < -Math.PI * 5 / 6) launchAngle = -Math.PI * 5 / 6;
+
         document.getElementById('powerBarContainer').classList.add('visible');
     }
 }
@@ -764,15 +903,18 @@ function onMouseMove(e) {
     const rect = e.target.getBoundingClientRect();
     mouseX = e.clientX - rect.left;
     mouseY = e.clientY - rect.top;
-    
+
     if (isCharging) {
         const dx = mouseX - launchStartX;
         const dy = mouseY - launchStartY;
-        launchAngle = Math.atan2(dy, dx);
-        
-        // 限制角度范围
-        if (launchAngle > 0) launchAngle = 0;
-        if (launchAngle < -Math.PI) launchAngle = -Math.PI;
+
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+            launchAngle = Math.atan2(dy, dx);
+
+            // 限制角度范围 - 只允许向右上方发射（-150度到-30度）
+            if (launchAngle > -Math.PI / 6) launchAngle = -Math.PI / 6;
+            if (launchAngle < -Math.PI * 5 / 6) launchAngle = -Math.PI * 5 / 6;
+        }
     }
 }
 
@@ -868,15 +1010,70 @@ function onCollision(event) {
         if (labels.includes('ball') && labels.includes('spring')) {
             const spring = pair.bodyA.label === 'spring' ? pair.bodyA : pair.bodyB;
             addScore(spring.scoreValue || 20, spring.position);
-            
+
             Body.scale(spring, 1.2, 1.2);
             setTimeout(() => Body.scale(spring, 1/1.2, 1/1.2), 150);
-            
+
             // 弹跳效果
             Body.applyForce(ball, { x: 0, y: -0.05 }, ball.position);
             showSpringEffect(spring.position);
         }
-        
+
+        // 增强弹力区域碰撞 - 给弹珠增加100%弹力
+        if (labels.includes('ball') && labels.includes('boostZone')) {
+            const boostZone = pair.bodyA.label === 'boostZone' ? pair.bodyA : pair.bodyB;
+            addScore(boostZone.scoreValue || 15, boostZone.position);
+
+            Body.scale(boostZone, 1.1, 1.1);
+            setTimeout(() => Body.scale(boostZone, 1/1.1, 1/1.1), 200);
+
+            const currentVelocity = Vector.magnitude(ball.velocity);
+            const boostVelocity = Math.max(currentVelocity * 2, 15);
+
+            Body.setVelocity(ball, {
+                x: ball.velocity.x * 0.5,
+                y: -boostVelocity
+            });
+
+            showBoostEffect(boostZone.position);
+        }
+
+        // 地雷碰撞 - 弹力下降20%
+        if (labels.includes('ball') && labels.includes('mine')) {
+            const mine = pair.bodyA.label === 'mine' ? pair.bodyA : pair.bodyB;
+
+            if (mine.labelElement) {
+                mine.labelElement.remove();
+            }
+            Composite.remove(engine.world, mine);
+            mines = mines.filter(m => m !== mine);
+
+            addScore(mine.scoreValue || -5, mine.position);
+            showMineEffect(mine.position);
+
+            const currentVelocity = Vector.magnitude(ball.velocity);
+            const newVelocity = currentVelocity * 0.8;
+
+            Body.setVelocity(ball, {
+                x: ball.velocity.x * 0.8,
+                y: ball.velocity.y * 0.8
+            });
+        }
+
+        // 炸弹碰撞 - 游戏结束
+        if (labels.includes('ball') && labels.includes('bomb')) {
+            const bomb = pair.bodyA.label === 'bomb' ? pair.bodyA : pair.bodyB;
+
+            if (bomb.labelElement) {
+                bomb.labelElement.remove();
+            }
+            Composite.remove(engine.world, bomb);
+            bombs = bombs.filter(b => b !== bomb);
+
+            showExplosionEffect(bomb.position);
+            gameOver(bomb.position);
+        }
+
         // 道具碰撞
         if (labels.includes('ball') && labels.includes('powerUp')) {
             const powerUp = pair.bodyA.label === 'powerUp' ? pair.bodyA : pair.bodyB;
@@ -925,11 +1122,131 @@ function showSpringEffect(position) {
     popup.style.left = position.x + 'px';
     popup.style.top = position.y + 'px';
     popup.style.color = '#00D4FF';
-    
+
     const container = document.getElementById('game-container');
     container.appendChild(popup);
-    
+
     setTimeout(() => popup.remove(), 800);
+}
+
+// 显示增强弹力效果
+function showBoostEffect(position) {
+    const popup = document.createElement('div');
+    popup.className = 'score-popup';
+    popup.textContent = '⚡ BOOST! +100%';
+    popup.style.left = position.x + 'px';
+    popup.style.top = position.y + 'px';
+    popup.style.color = '#00FFFF';
+    popup.style.fontSize = '1.5rem';
+    popup.style.fontWeight = 'bold';
+    popup.style.textShadow = '0 0 10px #00FFFF';
+
+    const container = document.getElementById('game-container');
+    container.appendChild(popup);
+
+    setTimeout(() => popup.remove(), 1200);
+}
+
+// 显示地雷效果
+function showMineEffect(position) {
+    const popup = document.createElement('div');
+    popup.className = 'score-popup';
+    popup.textContent = '💣 弹力下降20%!';
+    popup.style.left = position.x + 'px';
+    popup.style.top = position.y + 'px';
+    popup.style.color = '#FF6600';
+    popup.style.fontSize = '1.4rem';
+
+    const container = document.getElementById('game-container');
+    container.appendChild(popup);
+
+    setTimeout(() => popup.remove(), 1000);
+}
+
+// 显示爆炸特效
+function showExplosionEffect(position) {
+    for (let i = 0; i < 15; i++) {
+        setTimeout(() => {
+            const particle = document.createElement('div');
+            particle.style.position = 'absolute';
+            particle.style.width = '10px';
+            particle.style.height = '10px';
+            particle.style.borderRadius = '50%';
+            particle.style.backgroundColor = ['#FF0000', '#FF6600', '#FFFF00', '#FFFFFF'][Math.floor(Math.random() * 4)];
+            particle.style.left = position.x + 'px';
+            particle.style.top = position.y + 'px';
+            particle.style.boxShadow = '0 0 10px ' + particle.style.backgroundColor;
+            particle.style.zIndex = '1000';
+
+            const angle = (Math.PI * 2 * i) / 15;
+            const velocity = 5 + Math.random() * 5;
+            const dx = Math.cos(angle) * velocity;
+            const dy = Math.sin(angle) * velocity;
+
+            document.getElementById('game-container').appendChild(particle);
+
+            let step = 0;
+            const animateParticle = () => {
+                step++;
+                const currentLeft = parseFloat(particle.style.left);
+                const currentTop = parseFloat(particle.style.top);
+
+                particle.style.left = (currentLeft + dx) + 'px';
+                particle.style.top = (currentTop + dy) + 'px';
+                particle.style.opacity = (1 - step / 30).toString();
+                particle.style.transform = `scale(${1 - step / 30})`;
+
+                if (step < 30) {
+                    requestAnimationFrame(animateParticle);
+                } else {
+                    particle.remove();
+                }
+            };
+            requestAnimationFrame(animateParticle);
+        }, i * 10);
+    }
+}
+
+// 游戏结束（炸弹爆炸）
+function gameOver(bombPosition) {
+    const popup = document.createElement('div');
+    popup.style.position = 'fixed';
+    popup.style.top = '50%';
+    popup.style.left = '50%';
+    popup.style.transform = 'translate(-50%, -50%)';
+    popup.style.background = 'rgba(255, 0, 0, 0.95)';
+    popup.style.color = '#FFF';
+    popup.style.padding = '40px 60px';
+    popup.style.borderRadius = '20px';
+    popup.style.textAlign = 'center';
+    popup.style.zIndex = '2000';
+    popup.style.boxShadow = '0 0 50px rgba(255, 0, 0, 0.8)';
+
+    popup.innerHTML = `
+        <div style="font-size: 80px; margin-bottom: 20px;">💥</div>
+        <h1 style="font-size: 3rem; margin-bottom: 10px;">BOOM!</h1>
+        <p style="font-size: 1.5rem; margin-bottom: 30px;">炸弹爆炸！游戏结束</p>
+        <button id="retryBtn" style="
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #FF6B6B, #EE5A5A);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(238, 90, 90, 0.4);
+        ">再试一次</button>
+    `;
+
+    document.body.appendChild(popup);
+
+    document.getElementById('retryBtn').onclick = () => {
+        popup.remove();
+        resetBall();
+    };
+
+    Body.setVelocity(ball, { x: 0, y: 0 });
+    ball.isSleeping = true;
 }
 
 // 显示道具效果
@@ -1080,22 +1397,21 @@ function resetBall() {
     if (launchConstraint) {
         Composite.remove(engine.world, launchConstraint);
     }
-    
-    // 清理道具
+
     powerUps.forEach(p => {
         if (p.labelElement) {
             p.labelElement.remove();
         }
     });
     powerUps = [];
-    
+
     stopPowerUpDrops();
     setTimeout(() => {
         if (levelConfigs[currentLevel].hasPowerUps) {
             startPowerUpDrops();
         }
     }, 1000);
-    
+
     createBall();
     levelComplete = false;
 }
@@ -1161,11 +1477,24 @@ function gameLoop() {
             resetBall();
         }
         
-        // 更新道具标签位置
         powerUps.forEach(p => {
             if (p.labelElement) {
                 p.labelElement.style.left = (p.position.x - 10) + 'px';
                 p.labelElement.style.top = (p.position.y - 10) + 'px';
+            }
+        });
+
+        mines.forEach(m => {
+            if (m.labelElement) {
+                m.labelElement.style.left = (m.position.x - 12) + 'px';
+                m.labelElement.style.top = (m.position.y - 12) + 'px';
+            }
+        });
+
+        bombs.forEach(b => {
+            if (b.labelElement) {
+                b.labelElement.style.left = (b.position.x - 15) + 'px';
+                b.labelElement.style.top = (b.position.y - 15) + 'px';
             }
         });
     }
