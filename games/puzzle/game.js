@@ -97,23 +97,30 @@ class PuzzleGame {
         const imageList = ['1.png', '2.png', '3.png', '4.png', '5.png'];
 
         const availableImages = [];
+        const loadPromises = [];
 
         for (const filename of imageList) {
-            try {
-                const response = await fetch(`./images/${filename}`);
-                if (response.ok) {
-                    availableImages.push(filename);
-                }
-            } catch (error) {
-                console.log(`Image ${filename} not found:`, error);
-            }
+            const promise = this.checkImageExists(`./images/${filename}`);
+            loadPromises.push(promise);
         }
 
+        const results = await Promise.allSettled(loadPromises);
+
+        results.forEach((result, index) => {
+            if (result.status === 'fulfilled' && result.value) {
+                availableImages.push(imageList[index]);
+            }
+        });
+
+        console.log('Available images:', availableImages);
+
         if (availableImages.length > 0) {
-            const randomImage = availableImages[Math.floor(Math.random() * availableImages.length)];
+            const randomIndex = Math.floor(Math.random() * availableImages.length);
+            const randomImage = availableImages[randomIndex];
+
+            console.log('Selected image:', randomImage);
 
             const img = new Image();
-            img.crossOrigin = 'anonymous';
 
             return new Promise((resolve) => {
                 img.onload = () => {
@@ -142,19 +149,32 @@ class PuzzleGame {
                     ctx.drawImage(img, x, y, width, height);
 
                     this.currentImage = canvas.toDataURL('image/png', 0.9);
+                    console.log('Image loaded successfully');
                     resolve();
                 };
 
-                img.onerror = () => {
-                    console.error('Failed to load image:', randomImage);
+                img.onerror = (e) => {
+                    console.error('Failed to load image:', randomImage, e);
                     this.generateFallbackImage();
                     resolve();
                 };
 
-                img.src = `./images/${randomImage}`;
+                const imagePath = new URL(randomImage, window.location.href).href;
+                img.src = imagePath;
             });
         } else {
+            console.log('No images found, using fallback');
             this.generateFallbackImage();
+        }
+    }
+
+    async checkImageExists(imagePath) {
+        try {
+            const response = await fetch(imagePath, { method: 'HEAD' });
+            return response.ok;
+        } catch (error) {
+            console.log(`Image check failed:`, imagePath, error);
+            return false;
         }
     }
 
