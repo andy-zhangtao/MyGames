@@ -21,6 +21,8 @@ class PuzzleGame {
         this.totalStars = this.loadTotalStars();
         this.earnedStars = 0;
         this.isPeeking = false;
+        this.touchIndicator = null;
+        this.touchedPiece = null;
 
         this.init();
     }
@@ -326,10 +328,34 @@ class PuzzleGame {
                 return;
             }
             e.preventDefault();
+
+            this.isDragging = true;
+            this.touchedPiece = pieceElement;
+            pieceElement.classList.add('dragging');
+
+            const touch = e.touches[0];
+            this.createTouchIndicator(touch.clientX, touch.clientY, pieceElement);
         }, { passive: false });
 
         pieceElement.addEventListener('touchmove', (e) => {
+            if (!this.isDragging) {
+                e.preventDefault();
+                return;
+            }
+
             e.preventDefault();
+
+            const touch = e.touches[0];
+            this.updateTouchIndicator(touch.clientX, touch.clientY);
+
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            document.querySelectorAll('.puzzle-piece').forEach(p => {
+                p.classList.remove('drag-over');
+            });
+
+            if (element && element.classList.contains('puzzle-piece') && element !== this.touchedPiece) {
+                element.classList.add('drag-over');
+            }
         }, { passive: false });
 
         pieceElement.addEventListener('touchend', (e) => {
@@ -339,8 +365,10 @@ class PuzzleGame {
             const touch = e.changedTouches[0];
             const element = document.elementFromPoint(touch.clientX, touch.clientY);
 
-            if (element && element.classList.contains('puzzle-piece') && element !== pieceElement) {
-                const fromIndex = parseInt(pieceElement.dataset.index);
+            this.removeTouchIndicator();
+
+            if (element && element.classList.contains('puzzle-piece') && element !== this.touchedPiece) {
+                const fromIndex = parseInt(this.touchedPiece.dataset.index);
                 const toIndex = parseInt(element.dataset.index);
 
                 this.recordMove(fromIndex, toIndex);
@@ -350,6 +378,15 @@ class PuzzleGame {
                 this.renderPuzzle();
                 this.checkComplete();
             }
+
+            this.isDragging = false;
+            if (this.touchedPiece) {
+                this.touchedPiece.classList.remove('dragging');
+                this.touchedPiece = null;
+            }
+            document.querySelectorAll('.puzzle-piece').forEach(p => {
+                p.classList.remove('drag-over');
+            });
         }, { passive: false });
     }
 
@@ -655,12 +692,46 @@ class PuzzleGame {
         });
     }
 
+    createTouchIndicator(x, y, sourceElement) {
+        this.removeTouchIndicator();
+
+        const indicator = document.createElement('div');
+        indicator.className = 'touch-indicator';
+
+        const rect = sourceElement.getBoundingClientRect();
+        const pieceSize = Math.min(rect.width, rect.height);
+
+        indicator.style.width = `${pieceSize}px`;
+        indicator.style.height = `${pieceSize}px`;
+        indicator.style.left = `${x}px`;
+        indicator.style.top = `${y}px`;
+
+        document.body.appendChild(indicator);
+        this.touchIndicator = indicator;
+    }
+
+    updateTouchIndicator(x, y) {
+        if (this.touchIndicator) {
+            this.touchIndicator.style.left = `${x}px`;
+            this.touchIndicator.style.top = `${y}px`;
+        }
+    }
+
+    removeTouchIndicator() {
+        if (this.touchIndicator) {
+            this.touchIndicator.remove();
+            this.touchIndicator = null;
+        }
+    }
+
     resetGame() {
+        this.removeTouchIndicator();
         this.stopTimer();
         this.startGame(this.gridSize);
     }
 
     backToMenu() {
+        this.removeTouchIndicator();
         this.stopTimer();
         document.getElementById('game-screen').classList.add('hidden');
         document.getElementById('complete-modal').classList.add('hidden');
