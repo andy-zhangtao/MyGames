@@ -10,6 +10,17 @@ class PuzzleGame {
         this.draggedPiece = null;
         this.gameStarted = false;
         this.isComplete = false;
+        this.moveHistory = [];
+        this.powerups = {
+            hint: 3,
+            autoOne: 2,
+            autoMultiple: 2,
+            peek: 3,
+            undo: 3
+        };
+        this.totalStars = this.loadTotalStars();
+        this.earnedStars = 0;
+        this.isPeeking = false;
 
         this.init();
     }
@@ -17,13 +28,39 @@ class PuzzleGame {
     init() {
         this.bindEvents();
         this.loadRandomImage();
+        this.updateStarsDisplay();
     }
 
     bindEvents() {
         document.querySelectorAll('.difficulty-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', () => {
                 const size = parseInt(btn.dataset.size);
                 this.startGame(size);
+            });
+        });
+
+        document.getElementById('shop-btn').addEventListener('click', () => this.showShop());
+        document.getElementById('shop-close').addEventListener('click', () => this.hideShop());
+        document.getElementById('shop-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('shop-modal')) {
+                this.hideShop();
+            }
+        });
+
+        document.querySelectorAll('.powerup-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const type = item.dataset.powerup;
+                this.usePowerup(type);
+            });
+        });
+
+        document.querySelectorAll('.shop-buy-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const price = parseInt(btn.dataset.price);
+                const shopItem = btn.closest('.shop-item');
+                const powerupType = shopItem.dataset.powerup;
+                this.buyPowerup(powerupType, price);
             });
         });
 
@@ -40,6 +77,20 @@ class PuzzleGame {
         document.getElementById('complete-close').addEventListener('click', () => this.hideCompleteModal());
         document.getElementById('play-again-btn').addEventListener('click', () => this.playAgain());
         document.getElementById('change-difficulty-btn').addEventListener('click', () => this.backToMenu());
+    }
+
+    loadTotalStars() {
+        const stored = localStorage.getItem('puzzleTotalStars');
+        return stored ? parseInt(stored) : 0;
+    }
+
+    saveTotalStars() {
+        localStorage.setItem('puzzleTotalStars', this.totalStars.toString());
+    }
+
+    updateStarsDisplay() {
+        document.getElementById('total-stars').textContent = this.totalStars;
+        document.getElementById('shop-stars-count').textContent = this.totalStars;
     }
 
     loadRandomImage() {
@@ -76,11 +127,15 @@ class PuzzleGame {
         this.seconds = 0;
         this.gameStarted = false;
         this.isComplete = false;
+        this.moveHistory = [];
+        this.earnedStars = 0;
+        this.isPeeking = false;
 
         document.getElementById('difficulty-screen').classList.add('hidden');
         document.getElementById('game-screen').classList.remove('hidden');
 
         this.updateDisplay();
+        this.updatePowerupDisplay();
         this.createPuzzle();
         this.shufflePuzzle();
         this.renderPuzzle();
@@ -114,6 +169,8 @@ class PuzzleGame {
 
             this.swapPieces(pos1, pos2);
         }
+
+        this.moveHistory = [];
     }
 
     swapPieces(pos1, pos2) {
@@ -151,6 +208,8 @@ class PuzzleGame {
 
             grid.appendChild(pieceElement);
         });
+
+        this.clearHighlights();
     }
 
     addDragEvents(pieceElement) {
@@ -158,6 +217,10 @@ class PuzzleGame {
             if (!this.gameStarted) {
                 this.startTimer();
                 this.gameStarted = true;
+            }
+            if (this.isPeeking) {
+                e.preventDefault();
+                return;
             }
             this.isDragging = true;
             this.draggedPiece = pieceElement;
@@ -176,7 +239,7 @@ class PuzzleGame {
 
         pieceElement.addEventListener('dragover', (e) => {
             e.preventDefault();
-            if (this.draggedPiece && this.draggedPiece !== pieceElement) {
+            if (this.draggedPiece && this.draggedPiece !== pieceElement && !this.isPeeking) {
                 pieceElement.classList.add('drag-over');
             }
         });
@@ -189,10 +252,11 @@ class PuzzleGame {
             e.preventDefault();
             pieceElement.classList.remove('drag-over');
 
-            if (this.draggedPiece && this.draggedPiece !== pieceElement) {
+            if (this.draggedPiece && this.draggedPiece !== pieceElement && !this.isPeeking) {
                 const fromIndex = parseInt(this.draggedPiece.dataset.index);
                 const toIndex = parseInt(pieceElement.dataset.index);
 
+                this.recordMove(fromIndex, toIndex);
                 this.swapPieces(fromIndex, toIndex);
                 this.moves++;
                 this.updateDisplay();
@@ -206,6 +270,10 @@ class PuzzleGame {
                 this.startTimer();
                 this.gameStarted = true;
             }
+            if (this.isPeeking) {
+                e.preventDefault();
+                return;
+            }
             e.preventDefault();
         }, { passive: false });
 
@@ -215,6 +283,8 @@ class PuzzleGame {
 
         pieceElement.addEventListener('touchend', (e) => {
             e.preventDefault();
+            if (this.isPeeking) return;
+
             const touch = e.changedTouches[0];
             const element = document.elementFromPoint(touch.clientX, touch.clientY);
 
@@ -222,6 +292,7 @@ class PuzzleGame {
                 const fromIndex = parseInt(pieceElement.dataset.index);
                 const toIndex = parseInt(element.dataset.index);
 
+                this.recordMove(fromIndex, toIndex);
                 this.swapPieces(fromIndex, toIndex);
                 this.moves++;
                 this.updateDisplay();
@@ -229,6 +300,18 @@ class PuzzleGame {
                 this.checkComplete();
             }
         }, { passive: false });
+    }
+
+    recordMove(fromIndex, toIndex) {
+        this.moveHistory.push({
+            from: fromIndex,
+            to: toIndex,
+            pieces: JSON.parse(JSON.stringify(this.pieces))
+        });
+
+        if (this.moveHistory.length > 50) {
+            this.moveHistory.shift();
+        }
     }
 
     startTimer() {
@@ -263,8 +346,28 @@ class PuzzleGame {
         if (isComplete && !this.isComplete) {
             this.isComplete = true;
             this.stopTimer();
+            this.earnedStars = this.calculateStars();
+            this.totalStars += this.earnedStars;
+            this.saveTotalStars();
+            this.updateStarsDisplay();
             this.showCompleteModal();
         }
+    }
+
+    calculateStars() {
+        const totalPieces = this.gridSize * this.gridSize;
+        const optimalMoves = totalPieces * 2;
+        const timeLimit = totalPieces * 3;
+
+        let stars = 1;
+
+        if (this.moves <= optimalMoves * 1.5 && this.seconds <= timeLimit * 1.5) {
+            stars = 3;
+        } else if (this.moves <= optimalMoves * 2 && this.seconds <= timeLimit * 2) {
+            stars = 2;
+        }
+
+        return stars;
     }
 
     showCompleteModal() {
@@ -274,9 +377,8 @@ class PuzzleGame {
 
         document.getElementById('complete-time').textContent = timeStr;
         document.getElementById('complete-moves').textContent = this.moves;
-
-        const stars = this.calculateStars();
-        document.getElementById('complete-stars').textContent = stars;
+        document.getElementById('complete-stars').textContent = '⭐'.repeat(this.earnedStars);
+        document.getElementById('earned-stars').textContent = `+${this.earnedStars} ⭐`;
 
         document.getElementById('complete-modal').classList.remove('hidden');
     }
@@ -285,20 +387,181 @@ class PuzzleGame {
         document.getElementById('complete-modal').classList.add('hidden');
     }
 
-    calculateStars() {
-        const totalPieces = this.gridSize * this.gridSize;
-        const optimalMoves = totalPieces * 2;
-        const timeLimit = totalPieces * 3;
+    updatePowerupDisplay() {
+        document.getElementById('hint-count').textContent = this.powerups.hint;
+        document.getElementById('auto-one-count').textContent = this.powerups.autoOne;
+        document.getElementById('auto-multiple-count').textContent = this.powerups.autoMultiple;
+        document.getElementById('peek-count').textContent = this.powerups.peek;
+        document.getElementById('undo-count').textContent = this.powerups.undo;
 
-        let stars = '⭐';
+        document.querySelectorAll('.powerup-item').forEach(item => {
+            const type = item.dataset.powerup;
+            const count = this.powerups[type];
 
-        if (this.moves <= optimalMoves * 1.5 && this.seconds <= timeLimit * 1.5) {
-            stars = '⭐⭐⭐';
-        } else if (this.moves <= optimalMoves * 2 && this.seconds <= timeLimit * 2) {
-            stars = '⭐⭐';
+            if (count <= 0) {
+                item.classList.add('disabled');
+            } else {
+                item.classList.remove('disabled');
+            }
+        });
+
+        this.updateShopButtons();
+    }
+
+    updateShopButtons() {
+        document.querySelectorAll('.shop-buy-btn').forEach(btn => {
+            const price = parseInt(btn.dataset.price);
+            btn.disabled = this.totalStars < price;
+        });
+    }
+
+    usePowerup(type) {
+        if (this.powerups[type] <= 0 || this.isComplete) return;
+
+        switch (type) {
+            case 'hint':
+                this.useHintPowerup();
+                break;
+            case 'autoOne':
+                this.useAutoOnePowerup();
+                break;
+            case 'autoMultiple':
+                this.useAutoMultiplePowerup();
+                break;
+            case 'peek':
+                this.usePeekPowerup();
+                break;
+            case 'undo':
+                this.useUndoPowerup();
+                break;
+        }
+    }
+
+    useHintPowerup() {
+        this.powerups.hint--;
+        this.updatePowerupDisplay();
+
+        const wrongPieces = this.pieces.filter((piece, index) => piece.id !== index);
+
+        if (wrongPieces.length > 0) {
+            const randomPiece = wrongPieces[Math.floor(Math.random() * wrongPieces.length)];
+            const correctPosition = randomPiece.correctPosition;
+
+            const pieces = document.querySelectorAll('.puzzle-piece');
+            const targetPiece = pieces[correctPosition];
+
+            if (targetPiece) {
+                targetPiece.style.border = '4px solid #feca57';
+                targetPiece.style.boxShadow = '0 0 20px rgba(254, 202, 87, 0.8)';
+
+                setTimeout(() => {
+                    this.renderPuzzle();
+                }, 2000);
+            }
+        }
+    }
+
+    useAutoOnePowerup() {
+        this.powerups.autoOne--;
+        this.updatePowerupDisplay();
+
+        const wrongPieces = this.pieces
+            .map((piece, index) => ({ piece, index }))
+            .filter(item => item.piece.id !== item.index);
+
+        if (wrongPieces.length > 0) {
+            const randomWrong = wrongPieces[Math.floor(Math.random() * wrongPieces.length)];
+            const wrongIndex = randomWrong.index;
+            const correctIndex = randomWrong.piece.correctPosition;
+
+            const pieceAtCorrect = this.pieces.find((p, i) => i === correctIndex);
+            const pieceAtWrong = this.pieces.find((p, i) => i === wrongIndex);
+
+            if (pieceAtCorrect && pieceAtWrong) {
+                this.recordMove(wrongIndex, correctIndex);
+                this.swapPieces(wrongIndex, correctIndex);
+                this.moves++;
+                this.updateDisplay();
+                this.renderPuzzle();
+                this.checkComplete();
+            }
+        }
+    }
+
+    useAutoMultiplePowerup() {
+        this.powerups.autoMultiple--;
+        this.updatePowerupDisplay();
+
+        const wrongPieces = this.pieces
+            .map((piece, index) => ({ piece, index }))
+            .filter(item => item.piece.id !== item.index);
+
+        const numToFix = Math.min(3 + Math.floor(Math.random() * 3), wrongPieces.length);
+
+        for (let i = 0; i < numToFix; i++) {
+            if (wrongPieces.length === 0) break;
+
+            const randomIndex = Math.floor(Math.random() * wrongPieces.length);
+            const randomWrong = wrongPieces[randomIndex];
+            const wrongIndex = randomWrong.index;
+            const correctIndex = randomWrong.piece.correctPosition;
+
+            const pieceAtCorrect = this.pieces.find((p, i) => i === correctIndex);
+            const pieceAtWrong = this.pieces.find((p, i) => i === wrongIndex);
+
+            if (pieceAtCorrect && pieceAtWrong) {
+                this.recordMove(wrongIndex, correctIndex);
+                this.swapPieces(wrongIndex, correctIndex);
+                this.moves++;
+            }
+
+            wrongPieces.splice(randomIndex, 1);
         }
 
-        return stars;
+        this.updateDisplay();
+        this.renderPuzzle();
+        this.checkComplete();
+    }
+
+    usePeekPowerup() {
+        if (this.isPeeking) return;
+
+        this.powerups.peek--;
+        this.updatePowerupDisplay();
+
+        this.isPeeking = true;
+
+        const previewModal = document.getElementById('preview-modal');
+        const previewImage = document.getElementById('preview-image');
+        previewImage.src = this.currentImage;
+        previewModal.classList.remove('hidden');
+
+        setTimeout(() => {
+            previewModal.classList.add('hidden');
+            this.isPeeking = false;
+        }, 3000);
+    }
+
+    useUndoPowerup() {
+        if (this.moveHistory.length === 0) {
+            alert('没有可以撤销的步骤！');
+            return;
+        }
+
+        this.powerups.undo--;
+        this.updatePowerupDisplay();
+
+        const lastMove = this.moveHistory.pop();
+
+        if (lastMove) {
+            this.pieces = lastMove.pieces;
+            this.pieces.forEach((piece, index) => {
+                piece.currentPosition = index;
+            });
+            this.moves--;
+            this.updateDisplay();
+            this.renderPuzzle();
+        }
     }
 
     showPreview() {
@@ -311,6 +574,36 @@ class PuzzleGame {
         document.getElementById('preview-modal').classList.add('hidden');
     }
 
+    showShop() {
+        this.updateShopButtons();
+        document.getElementById('shop-modal').classList.remove('hidden');
+    }
+
+    hideShop() {
+        document.getElementById('shop-modal').classList.add('hidden');
+    }
+
+    buyPowerup(type, price) {
+        if (this.totalStars < price) {
+            alert('星星不够！');
+            return;
+        }
+
+        this.totalStars -= price;
+        this.powerups[type]++;
+        this.saveTotalStars();
+        this.updateStarsDisplay();
+        this.updateShopButtons();
+        this.updatePowerupDisplay();
+    }
+
+    clearHighlights() {
+        document.querySelectorAll('.puzzle-piece').forEach(piece => {
+            piece.style.border = '';
+            piece.style.boxShadow = '';
+        });
+    }
+
     resetGame() {
         this.stopTimer();
         this.startGame(this.gridSize);
@@ -320,6 +613,7 @@ class PuzzleGame {
         this.stopTimer();
         document.getElementById('game-screen').classList.add('hidden');
         document.getElementById('complete-modal').classList.add('hidden');
+        document.getElementById('shop-modal').classList.add('hidden');
         document.getElementById('difficulty-screen').classList.remove('hidden');
     }
 

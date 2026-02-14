@@ -54,6 +54,12 @@
                 <div class="difficulty-size">8 × 8</div>
             </button>
         </div>
+
+        <button class="shop-btn" id="shop-btn">
+            <span class="shop-icon">🍬</span>
+            <span class="shop-text">糖果商店</span>
+            <span class="star-count" id="total-stars">0</span>
+        </button>
     </div>
 
     <!-- 游戏主界面 -->
@@ -80,6 +86,30 @@
                 <button class="control-btn" id="back-to-menu-btn" title="返回选择">
                     <span class="control-icon">📋</span>
                 </button>
+            </div>
+        </div>
+
+        <!-- 道具栏 -->
+        <div class="powerup-bar">
+            <div class="powerup-item" data-powerup="hint" title="提示糖果（1⭐）- 高亮1个正确块">
+                <div class="powerup-icon">🌟</div>
+                <div class="powerup-count" id="hint-count">3</div>
+            </div>
+            <div class="powerup-item" data-powerup="auto-one" title="神之一手糖果（2⭐）- 自动摆对1个块">
+                <div class="powerup-icon">⭐</div>
+                <div class="powerup-count" id="auto-one-count">2</div>
+            </div>
+            <div class="powerup-item" data-powerup="auto-multiple" title="自动排列糖果（2⭐）- 自动摆对3-5个块">
+                <div class="powerup-icon">🪄</div>
+                <div class="powerup-count" id="auto-multiple-count">2</div>
+            </div>
+            <div class="powerup-item" data-powerup="peek" title="偷看糖果（1⭐）- 显示原图3秒">
+                <div class="powerup-icon">👁️</div>
+                <div class="powerup-count" id="peek-count">3</div>
+            </div>
+            <div class="powerup-item" data-powerup="undo" title="撤销糖果（1⭐）- 撤销上一步">
+                <div class="powerup-icon">🔄</div>
+                <div class="powerup-count" id="undo-count">3</div>
             </div>
         </div>
 
@@ -120,10 +150,69 @@
                     <span class="stat-label">⭐ 星级</span>
                     <span class="stat-value" id="complete-stars">⭐⭐⭐</span>
                 </div>
+                <div class="stat-item">
+                    <span class="stat-label">🍬 获得</span>
+                    <span class="stat-value" id="earned-stars">+3 ⭐</span>
+                </div>
             </div>
             <div class="complete-actions">
                 <button class="btn btn-primary" id="play-again-btn">再玩一次</button>
                 <button class="btn btn-secondary" id="change-difficulty-btn">换个难度</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 糖果商店弹窗 -->
+    <div id="shop-modal" class="modal hidden">
+        <div class="modal-content shop-content">
+            <button class="modal-close" id="shop-close">&times;</button>
+            <div class="shop-header">
+                <h2 class="shop-title">🍬 糖果商店</h2>
+                <div class="shop-stars">
+                    <span class="shop-stars-icon">⭐</span>
+                    <span class="shop-stars-count" id="shop-stars-count">0</span>
+                </div>
+            </div>
+            <div class="shop-items">
+                <div class="shop-item" data-powerup="hint">
+                    <div class="shop-item-icon">🌟</div>
+                    <div class="shop-item-name">提示糖果</div>
+                    <div class="shop-item-desc">高亮1个正确块</div>
+                    <div class="shop-item-price">1 ⭐</div>
+                    <button class="shop-buy-btn" data-price="1">购买</button>
+                </div>
+
+                <div class="shop-item" data-powerup="auto-one">
+                    <div class="shop-item-icon">⭐</div>
+                    <div class="shop-item-name">神之一手糖果</div>
+                    <div class="shop-item-desc">自动摆对1个块</div>
+                    <div class="shop-item-price">2 ⭐</div>
+                    <button class="shop-buy-btn" data-price="2">购买</button>
+                </div>
+
+                <div class="shop-item" data-powerup="auto-multiple">
+                    <div class="shop-item-icon">🪄</div>
+                    <div class="shop-item-name">自动排列糖果</div>
+                    <div class="shop-item-desc">自动摆对3-5个块</div>
+                    <div class="shop-item-price">2 ⭐</div>
+                    <button class="shop-buy-btn" data-price="2">购买</button>
+                </div>
+
+                <div class="shop-item" data-powerup="peek">
+                    <div class="shop-item-icon">👁️</div>
+                    <div class="shop-item-name">偷看糖果</div>
+                    <div class="shop-item-desc">显示原图3秒</div>
+                    <div class="shop-item-price">1 ⭐</div>
+                    <button class="shop-buy-btn" data-price="1">购买</button>
+                </div>
+
+                <div class="shop-item" data-powerup="undo">
+                    <div class="shop-item-icon">🔄</div>
+                    <div class="shop-item-name">撤销糖果</div>
+                    <div class="shop-item-desc">撤销上一步</div>
+                    <div class="shop-item-price">1 ⭐</div>
+                    <button class="shop-buy-btn" data-price="1">购买</button>
+                </div>
             </div>
         </div>
     </div>

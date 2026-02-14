@@ -186,6 +186,127 @@ body {
     gap: 10px;
 }
 
+/* ====================
+     商店按钮（难度选择界面）
+     ==================== */
+.shop-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+    z-index: 100;
+    animation: bounce 2s infinite;
+}
+
+.shop-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 25px rgba(255, 107, 107, 0.5);
+}
+
+.shop-btn:active {
+    transform: scale(0.95);
+}
+
+.shop-icon {
+    font-size: 28px;
+}
+
+.shop-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+}
+
+.star-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: 800;
+    color: white;
+}
+
+/* ====================
+     道具栏
+     ==================== */
+.powerup-bar {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    animation: fadeInUp 0.6s ease;
+}
+
+.powerup-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+}
+
+.powerup-item:hover:not(.disabled) {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+}
+
+.powerup-item:active:not(.disabled) {
+    transform: translateY(-2px);
+}
+
+.powerup-item.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: #ccc;
+    box-shadow: none;
+}
+
+.powerup-icon {
+    font-size: 24px;
+}
+
+.powerup-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    background: #ff6b6b;
+    border: 2px solid white;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 800;
+    color: white;
+}
+
 .control-btn {
     display: flex;
     align-items: center;
@@ -408,6 +529,121 @@ body {
     flex-wrap: wrap;
 }
 
+/* ====================
+     糖果商店弹窗
+     ==================== */
+.shop-content {
+    max-width: 800px;
+}
+
+.shop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.shop-title {
+    font-family: 'ZCOOL KuaiLe', cursive;
+    font-size: 32px;
+    color: #667eea;
+}
+
+.shop-stars {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #feca57 0%, #ff6b6b 100%);
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(254, 202, 87, 0.4);
+}
+
+.shop-stars-icon {
+    font-size: 24px;
+}
+
+.shop-stars-count {
+    font-size: 24px;
+    font-weight: 800;
+    color: white;
+}
+
+.shop-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 20px;
+}
+
+.shop-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: #f8f9ff;
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.shop-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+    border-color: #667eea;
+}
+
+.shop-item-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.shop-item-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+.shop-item-desc {
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.shop-item-price {
+    font-size: 18px;
+    font-weight: 800;
+    color: #667eea;
+    margin-bottom: 12px;
+}
+
+.shop-buy-btn {
+    width: 100%;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.shop-buy-btn:hover:not(:disabled) {
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.shop-buy-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
 .btn {
     padding: 12px 30px;
     border: none;
@@ -541,6 +777,39 @@ body {
 
     .btn {
         width: 100%;
+    }
+
+    .shop-btn {
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 18px;
+    }
+
+    .shop-icon {
+        font-size: 24px;
+    }
+
+    .shop-text {
+        font-size: 16px;
+    }
+
+    .powerup-bar {
+        gap: 8px;
+        padding: 12px 15px;
+    }
+
+    .powerup-item {
+        width: 50px;
+        height: 50px;
+    }
+
+    .powerup-icon {
+        font-size: 20px;
+    }
+
+    .shop-items {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
     }
 }
 
