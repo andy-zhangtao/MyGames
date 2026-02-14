@@ -423,9 +423,9 @@ function handleOrientationChange(event) {
     
     // 应用到物理引擎
     updateEngineGravity(clampedGravityX, clampedGravityY);
-    updateGravityDisplay(deviceBeta, deviceGamma, engine.world.gravity.x, engine.world.gravity.y);
 }
 
+// 更新物理引擎重力
 
 function updateGravityDisplay(beta, gamma, gravityX, gravityY) {
     const gravityBeta = document.getElementById('gravityBeta');
@@ -442,12 +442,7 @@ function updateGravityDisplay(beta, gamma, gravityX, gravityY) {
 
     if (gravityBarX) {
         const percentage = ((gravityX + 1) / 2) * 100;
-        gravityBarX.style.width = percentage + '%';
-    }
-
-    if (gravityBarY) {
-        const percentage = ((gravityY + 1) / 2) * 100;
-        gravityBarY.style.width = percentage + '%';
+        gravityBarX.style.width = percentage + '%+"';    }    if (gravityBarY) {        const percentage = ((gravityY + 1) / 2) * 100;        gravityBarY.style.width = percentage + '"%+';
     }
 }
 function updateEngineGravity(x, y) {
@@ -1159,7 +1154,6 @@ function setupEventListeners() {
             updateGravityDisplay(0, 0, 0, 0.8);
         }
     }
-}
 
 function onMouseDown(e) {
     const rect = e.target.getBoundingClientRect();
@@ -1177,15 +1171,16 @@ function onMouseDown(e) {
         isCharging = true;
         power = 0;
 
+        // 根据点击位置设置初始角度
         const dx = mouseX - launchStartX;
         const dy = mouseY - launchStartY;
         launchAngle = Math.atan2(dy, dx);
 
-        if (launchAngle > -Math.PI / 18) launchAngle = -Math.PI / 18;
-        if (launchAngle < -Math.PI * 17 / 18) launchAngle = -Math.PI * 17 / 18;
+        // 限制角度范围 - 只允许向右上方发射
+        if (launchAngle > -Math.PI / 6) launchAngle = -Math.PI / 6;
+        if (launchAngle < -Math.PI * 5 / 6) launchAngle = -Math.PI * 5 / 6;
 
         document.getElementById('powerBarContainer').classList.add('visible');
-        updateDirectionIndicator();
         startChargingLoop();
     }
 }
@@ -1202,10 +1197,9 @@ function onMouseMove(e) {
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
             launchAngle = Math.atan2(dy, dx);
 
-            if (launchAngle > -Math.PI / 18) launchAngle = -Math.PI / 18;
-            if (launchAngle < -Math.PI * 17 / 18) launchAngle = -Math.PI * 17 / 18;
-            
-            updateDirectionIndicator();
+            // 限制角度范围 - 只允许向右上方发射（-150度到-30度）
+            if (launchAngle > -Math.PI / 6) launchAngle = -Math.PI / 6;
+            if (launchAngle < -Math.PI * 5 / 6) launchAngle = -Math.PI * 5 / 6;
         }
     }
 }
@@ -1275,11 +1269,6 @@ function launchBall() {
 
     isCharging = false;
     document.getElementById('powerBarContainer').classList.remove('visible');
-    
-    const indicator = document.getElementById('directionIndicator');
-    if (indicator) {
-        indicator.classList.remove('visible');
-    }
 
     Composite.remove(engine.world, launchConstraint);
     launchConstraint = null;
@@ -2033,74 +2022,6 @@ function updateEngineGravity(x, y) {
     
     console.log('重力更新:', { x: engine.world.gravity.x.toFixed(3), y: engine.world.gravity.y.toFixed(3) });
 }
-// 窗口调整
-function onResize() {
-    resizeCanvas();
-    render.canvas.width = canvasWidth;
-    render.canvas.height = canvasHeight;
-    render.options.width = canvasWidth;
-    render.options.height = canvasHeight;
-}
-
-// 创建背景星星
-function createBackgroundStars() {
-    const container = document.getElementById('bgDecoration');
-    for (let i = 0; i < 30; i++) {
-        const star = document.createElement('div');
-        star.className = 'star';
-        star.style.left = Math.random() * 100 + '%';
-        star.style.top = Math.random() * 100 + '%';
-        star.style.animationDelay = Math.random() * 2 + 's';
-        container.appendChild(star);
-    }
-}
-
-
-// 更新剩余次数显示
-function updateAttemptsDisplay() {
-    const display = document.getElementById('attemptsDisplay');
-    display.textContent = attemptsLeft + '次';
-
-    if (attemptsLeft <= 2) {
-        display.classList.add('critical');
-    } else {
-        display.classList.remove('critical');
-    }
-}
-
-function updateDirectionIndicator() {
-    const indicator = document.getElementById('directionIndicator');
-    const arrowLine = document.getElementById('arrowLine');
-    const directionLabel = document.getElementById('directionLabel');
-    
-    if (!indicator || !arrowLine || !directionLabel) return;
-
-    if (isCharging && power > 0) {
-        indicator.classList.add('visible');
-        
-        const indicatorSize = 200;
-        const centerX = indicatorSize / 2;
-        const centerY = indicatorSize / 2;
-        
-        const lineLength = 50 + (power / 100) * 40;
-        
-        const endX = centerX + Math.cos(launchAngle) * lineLength;
-        const endY = centerY + Math.sin(launchAngle) * lineLength;
-        
-        arrowLine.setAttribute('x2', endX);
-        arrowLine.setAttribute('y2', endY);
-        
-        const angleDegrees = Math.round((-launchAngle * 180 / Math.PI + 360) % 360);
-        directionLabel.textContent = `方向: ${angleDegrees}° | 力度: ${Math.round(power)}%`;
-        
-        const rect = document.getElementById('gameCanvas').getBoundingClientRect();
-        indicator.style.left = (rect.left + launchStartX - indicatorSize / 2) + 'px';
-        indicator.style.top = (rect.top + launchStartY - indicatorSize / 2) + 'px';
-    } else {
-        indicator.classList.remove('visible');
-    }
-}
-
 function gameLoop() {
     if (isCharging) {
         power = Math.min(power + 2, 100);
@@ -2114,8 +2035,6 @@ function gameLoop() {
                 y: launchStartY - Math.sin(launchAngle) * pullDist
             });
         }
-        
-        updateDirectionIndicator();
     }
     
     if (ball) {
