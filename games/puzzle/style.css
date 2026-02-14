@@ -307,6 +307,15 @@ body {
     color: white;
 }
 
+.powerup-item[data-powerup="change-image"] {
+    background: linear-gradient(135deg, #10b981 0%, #f59e0b 100%);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+.powerup-item[data-powerup="change-image"]:hover:not(.disabled) {
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+}
+
 .control-btn {
     display: flex;
     align-items: center;

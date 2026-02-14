@@ -16,7 +16,8 @@ class PuzzleGame {
             autoOne: 2,
             autoMultiple: 2,
             peek: 3,
-            undo: 3
+            undo: 3,
+            changeImage: 0
         };
         this.totalStars = this.loadTotalStars();
         this.earnedStars = 0;
@@ -481,6 +482,7 @@ class PuzzleGame {
         document.getElementById('auto-multiple-count').textContent = this.powerups.autoMultiple;
         document.getElementById('peek-count').textContent = this.powerups.peek;
         document.getElementById('undo-count').textContent = this.powerups.undo;
+        document.getElementById('change-image-count').textContent = this.powerups.changeImage;
 
         document.querySelectorAll('.powerup-item').forEach(item => {
             const type = item.dataset.powerup;
@@ -521,6 +523,9 @@ class PuzzleGame {
                 break;
             case 'undo':
                 this.useUndoPowerup();
+                break;
+            case 'changeImage':
+                this.useChangeImagePowerup();
                 break;
         }
     }
@@ -650,6 +655,36 @@ class PuzzleGame {
             this.updateDisplay();
             this.renderPuzzle();
         }
+    }
+
+    useChangeImagePowerup() {
+        if (this.totalStars < 1) {
+            alert('星星不够！需要1颗星星才能更换图片。');
+            return;
+        }
+
+        this.powerups.changeImage--;
+        this.totalStars--;
+        this.saveTotalStars();
+        this.updateStarsDisplay();
+        this.updatePowerupDisplay();
+
+        this.removeTouchIndicator();
+
+        console.log('Loading new image...');
+        this.loadRandomImage().then(() => {
+            this.gameStarted = false;
+            this.moves = 0;
+            this.seconds = 0;
+            this.moveHistory = [];
+            this.isComplete = false;
+            this.earnedStars = 0;
+            this.isPeeking = false;
+            this.updateDisplay();
+            this.createPuzzle();
+            this.shufflePuzzle();
+            this.renderPuzzle();
+        });
     }
 
     showPreview() {
