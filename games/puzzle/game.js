@@ -658,17 +658,12 @@ class PuzzleGame {
     }
 
     useChangeImagePowerup() {
-        if (this.totalStars < 1) {
-            alert('星星不够！需要1颗星星才能更换图片。');
+        if (this.powerups.changeImage < 1) {
+            alert('你没有换图糖果！请先在商店购买。');
             return;
         }
 
         this.powerups.changeImage--;
-        this.totalStars--;
-        this.saveTotalStars();
-        this.updateStarsDisplay();
-        this.updatePowerupDisplay();
-
         this.removeTouchIndicator();
 
         console.log('Loading new image...');
