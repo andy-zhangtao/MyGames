@@ -1926,6 +1926,213 @@ function goHome() {
     window.location.href = '../../index.html';
 }
 
+// 重力感应开关
+function toggleGravity() {
+    gravityEnabled = !gravityEnabled;
+    const gravityToggle = document.getElementById('gravityToggle');
+    
+    if (gravityEnabled) {
+        gravityToggle.classList.add('active');
+        if (gravityBtn) {
+            gravityBtn.textContent = '🎯 重力感应: 开启';
+        }
+            enableGravitySensor();
+    } else {
+        gravityToggle.classList.remove('active');
+        if (gravityBtn) {
+            gravityBtn.textContent = '🎯 重力感应: 关闭';
+        }
+            disableGravitySensor();
+            // 重置重力为默认值
+            updateEngineGravity(0, 0);
+        }
+    }
+}
+
+    function requestDeviceOrientationPermission() {
+        checkDeviceOrientationSupport();
+    }
+
+// 启用重力传感器
+function enableGravitySensor() {
+    if (deviceOrientationGranted) {
+        window.addEventListener('deviceorientation', handleOrientationChange);
+        console.log('重力传感器已启用');
+    }
+}
+
+// 禁用重力传感器
+function disableGravitySensor() {
+    window.removeEventListener('deviceorientation', handleOrientationChange);
+    console.log('重力传感器已禁用');
+}
+
+// 处理设备方向变化
+function handleOrientationChange(event) {
+    if (!event.beta && !event.gamma) return;
+    
+    deviceBeta = event.beta || 0;
+    deviceGamma = event.gamma || 0;
+    
+    // 平滑处理重力值
+    const smoothingFactor = 0.1;
+    smoothedGravityX = smoothedGravityX * (1 - smoothingFactor) + deviceGamma * smoothingFactor;
+    smoothedGravityY = smoothedGravityY * (1 - smoothingFactor) + deviceBeta * smoothingFactor;
+    
+    // 限制重力范围(-1到1之间)
+    const maxGravity = 1.0;
+    const clampedGravityX = Math.max(-maxGravity, Math.min(maxGravity, smoothedGravityX / 45));
+    const clampedGravityY = Math.max(-maxGravity, Math.min(maxGravity, smoothedGravityY / 45));
+    
+    // 应用到物理引擎
+    updateEngineGravity(clampedGravityX, clampedGravityY);
+}
+
+// 更新物理引擎重力
+function updateEngineGravity(x, y) {
+    if (!engine) return;
+    
+    // 基础重力 + 设备重力影响
+    const baseGravityY = 0.8;
+    const gravityStrength = 0.5;
+    
+    engine.world.gravity.x = x * gravityStrength;
+    engine.world.gravity.y = baseGravityY - y * gravityStrength;
+    
+    console.log('重力更新:', { x: engine.world.gravity.x.toFixed(3), y: engine.world.gravity.y.toFixed(3) });
+}
+
+// 显示权限被拒绝消息
+function showGravityDeniedMessage() {
+    const container = document.getElementById('game-container');
+    const message = document.createElement('div');
+    message.className = 'gravity-message';
+    message.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 12px;
+            font-size: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            text-align: center;
+            max-width: 300px;
+        ">
+            <div style="font-size: 24px; margin-bottom: 10px;">📱</div>
+            <div>重力感应需要权限</div>
+            <div style="margin-top: 10px; font-size: 14px;">
+                请前往「设置」&gt;「隐私与安全」&gt;「动作与方向」
+                <br>开启「动作与方向」访问权限
+            </div>
+        </div>
+    `;
+    container.appendChild(message);
+    
+    setTimeout(() => message.remove(), 5000);
+}
+
+// 初始化游戏
+function init() {
+    resizeCanvas();
+    createEngine();
+    createLevel(currentLevel);
+    checkDeviceOrientationSupport();
+    setupEventListeners();
+    createBackgroundStars();
+
+    runner = Runner.create();
+    Runner.run(runner, engine);
+
+    showLevelPopup();
+}
+
+function createLevel(level) {
+    Composite.clear(engine.world, false);
+    bumpers = [];
+    dominoes = [];
+    obstacles = [];
+    springs = [];
+    powerUps = [];
+    boostZones = [];
+    mines = [];
+    bombs = [];
+    blackHoles = [];
+
+    stopPowerUpDrops();
+
+    mines.forEach(m => {
+        if (m.labelElement) {
+            m.labelElement.remove();
+        }
+    });
+
+    bombs.forEach(b => {
+        if (b.labelElement) {
+            b.labelElement.remove();
+        }
+    });
+
+    blackHoles.forEach(bh => {
+        if (bh.labelElement) {
+            bh.labelElement.remove();
+        }
+    });
+
+    const config = levelConfigs[level];
+    targetScore = config.targetScore;
+    attemptsLeft = 5;
+    updateAttemptsDisplay();
+    document.getElementById('target').textContent = targetScore;
+    document.getElementById('level').textContent = level;
+
+    createWalls();
+    createLaunchArea();
+    createBumpers(config.bumpers);
+
+    if (config.hasWindmill) {
+        createWindmill(config.windmillPos.x, config.windmillPos.y);
+    }
+
+    if (config.hasDominoes) {
+        createDominoes(config.dominoesStart.x, config.dominoesStart.y);
+    }
+
+    if (config.hasDropBox) {
+        createDropBox();
+    }
+
+    if (config.springs) {
+        createSprings(config.springs);
+    }
+
+    if (config.hasPowerUps) {
+        setTimeout(() => startPowerUpDrops(), 2000);
+    }
+
+    createTargetZone();
+    createBoostZones();
+    createMinesAndBombs();
+    createBlackHoles();
+    createBall();
+}
+
+function startNextLevel() {
+    if (currentLevel < 10) {
+        document.getElementById('levelPopup').classList.remove('visible');
+        currentLevel++;
+        score = 0;
+        levelComplete = false;
+        document.getElementById('score').textContent = '0';
+        createLevel(currentLevel);
+        setTimeout(showLevelPopup, 300);
+    }
+}
+
 // 窗口调整
 function onResize() {
     resizeCanvas();
