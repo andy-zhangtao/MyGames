@@ -333,14 +333,71 @@ function createEngine() {
     Render.run(render);
 }
 
-// 检测设备方向传感器支持
 function checkDeviceOrientationSupport() {
     const requestBtn = document.getElementById('requestOrientationBtn');
+    
+    const userAgent = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+    const isAndroid = /Android/.test(userAgent);
+    const isDesktop = !isIOS && !isAndroid && /Win|Mac|Linux/.test(userAgent);
+    
+    console.log('设备检测:', {
+        isIOS,
+        isAndroid,
+        isDesktop,
+        userAgent: userAgent.substring(0, 100) + '...'
+    });
 
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceMotionEvent !== 'undefined') {
-        console.log('设备支持重力感应');
-        requestDeviceOrientationPermission();
-    } else {
+    if (isDesktop) {
+        console.log('桌面设备通常不支持重力感应');
+        if (requestBtn) {
+            requestBtn.style.display = 'none';
+        }
+        
+        const gravityToggle = document.getElementById('gravityToggle');
+        if (gravityToggle) {
+            gravityToggle.disabled = true;
+        }
+        
+        const gravityBtn = document.getElementById('gravityBtn');
+        if (gravityBtn) {
+            gravityBtn.textContent = '🎯 重力感应: 不支持';
+        }
+        
+        deviceOrientationGranted = false;
+        return;
+    }
+
+    if (typeof DeviceOrientationEvent === 'undefined') {
+        console.log('设备不支持重力感应API');
+        if (requestBtn) {
+            requestBtn.style.display = 'none';
+        }
+        
+        const gravityToggle = document.getElementById('gravityToggle');
+        if (gravityToggle) {
+            gravityToggle.disabled = true;
+        }
+        
+        showSimpleMessage('⚠️ 您的设备不支持重力感应');
+        deviceOrientationGranted = false;
+        return;
+    }
+
+    requestDeviceOrientationPermission();
+}
+
+// 请求设备方向传感器权限（iOS 13+）
+function requestDeviceOrientationPermission() {
+    const requestBtn = document.getElementById('requestOrientationBtn');
+    
+    console.log('检测设备类型:', {
+        isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+        isAndroid: /Android/.test(navigator.userAgent),
+        hasPermissionAPI: typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission
+    });
+
+    if (typeof DeviceOrientationEvent === 'undefined') {
         console.log('设备不支持重力感应');
         if (requestBtn) {
             requestBtn.style.display = 'none';
@@ -349,12 +406,11 @@ function checkDeviceOrientationSupport() {
         if (gravityToggle) {
             gravityToggle.disabled = true;
         }
+        showSimpleMessage('⚠️ 您的设备不支持重力感应');
+        return;
     }
-}
 
-// 请求设备方向传感器权限（iOS 13+）
-function requestDeviceOrientationPermission() {
-    if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) {
+    if (DeviceOrientationEvent.requestPermission) {
         console.log('请求设备方向传感器权限...');
         
         DeviceOrientationEvent.requestPermission()
@@ -362,6 +418,10 @@ function requestDeviceOrientationPermission() {
                 if (response === 'granted') {
                     deviceOrientationGranted = true;
                     console.log('设备方向传感器权限已获得');
+                    
+                    if (requestBtn) {
+                        requestBtn.style.display = 'none';
+                    }
                     
                     const gravityToggle = document.getElementById('gravityToggle');
                     if (gravityToggle) {
@@ -384,9 +444,25 @@ function requestDeviceOrientationPermission() {
                 showGravityDeniedMessage();
             });
     } else {
-        console.log('设备方向传感器不支持权限请求API,尝试直接使用');
+        console.log('设备支持自动重力感应，无需权限请求');
         deviceOrientationGranted = true;
         enableGravitySensor();
+        
+        if (requestBtn) {
+            requestBtn.style.display = 'none';
+        }
+        
+        const gravityToggle = document.getElementById('gravityToggle');
+        if (gravityToggle) {
+            gravityToggle.disabled = false;
+        }
+        
+        const gravityBtn = document.getElementById('gravityBtn');
+        if (gravityBtn) {
+            gravityBtn.textContent = '🎯 重力感应: 关闭';
+        }
+        
+        showSimpleMessage('✅ 重力感应已自动启用');
     }
 }
 
@@ -465,6 +541,90 @@ function updateEngineGravity(x, y) {
 
 // 显示权限被拒绝消息
 function showGravityDeniedMessage() {
+    const userAgent = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+    const isIOS16Plus = isIOS && /OS\s1[6-9]|OS\s[2-9][0-9]/.test(userAgent);
+    
+    let messageHTML = '';
+    
+    if (isIOS16Plus) {
+        messageHTML = `
+            <div>📱</div>
+            <div>重力感应权限未授予</div>
+            <div style="margin-top: 10px; font-size: 14px;">
+                iOS 16+ 已更改传感器权限机制。<br>
+                请在浏览器地址栏点击"🔒"图标，<br>
+                选择"允许"设备方向数据"。<br>
+                <br>
+                <small style="color: #ffcc00;">或尝试刷新页面后重新点击"启用重力感应"按钮</small>
+            </div>
+        `;
+    } else if (isIOS) {
+        messageHTML = `
+            <div>📱</div>
+            <div>重力感应权限未授予</div>
+            <div style="margin-top: 10px; font-size: 14px;">
+                重力感应需要权限才能正常工作。<br>
+                <br>
+                <strong>iOS 13-15 用户：</strong><br>
+                → 设置 → Safari → 动作与方向 → 允许<br>
+                <br>
+                <strong>其他浏览器：</strong><br>
+                → 在权限对话框中点击"允许"<br>
+                <br>
+                <small style="color: #ffcc00;">建议：关闭页面后重新打开，再次点击"启用重力感应"按钮</small>
+            </div>
+        `;
+    } else {
+        messageHTML = `
+            <div>⚠️</div>
+            <div>无法访问重力感应</div>
+            <div style="margin-top: 10px; font-size: 14px;">
+                请确保：<br>
+                1. 设备支持重力传感器（手机/平板）<br>
+                2. 浏览器允许访问传感器<br>
+                3. 网页使用 HTTPS 协议<br>
+                <br>
+                <small>桌面设备通常没有重力传感器</small>
+            </div>
+        `;
+    }
+    
+    const container = document.getElementById('game-container');
+    const message = document.createElement('div');
+    message.className = 'gravity-message';
+    message.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 16px;
+            font-size: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            text-align: center;
+            max-width: 350px;
+            line-height: 1.6;
+        ">
+            ${messageHTML}
+            <button onclick="this.parentElement.parentElement.remove()" 
+                    style="margin-top: 20px; padding: 12px 30px; 
+                           background: #10B981; color: white; border: none; 
+                           border-radius: 8px; font-size: 16px; cursor: pointer;">
+                知道了
+            </button>
+        </div>
+    `;
+    container.appendChild(message);
+    
+    setTimeout(() => message.remove(), 10000);
+}
+
+function showSimpleMessage(text) {
     const container = document.getElementById('game-container');
     const message = document.createElement('div');
     message.className = 'gravity-message';
@@ -474,27 +634,21 @@ function showGravityDeniedMessage() {
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(255, 0, 0, 0.9);
+            background: rgba(16, 185, 129, 0.95);
             color: white;
-            padding: 20px 40px;
-            border-radius: 12px;
-            font-size: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1500;
             text-align: center;
-            max-width: 300px;
         ">
-            <div style="font-size: 24px; margin-bottom: 10px;">📱</div>
-            <div>重力感应需要权限</div>
-            <div style="margin-top: 10px; font-size: 14px;">
-                请前往「设置」&gt;「隐私与安全」&gt;「动作与方向」
-                <br>开启「动作与方向」访问权限
-            </div>
+            ${text}
         </div>
     `;
     container.appendChild(message);
     
-    setTimeout(() => message.remove(), 5000);
+    setTimeout(() => message.remove(), 3000);
 }
 
 function createLevel(level) {
