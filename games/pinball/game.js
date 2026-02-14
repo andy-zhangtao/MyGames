@@ -38,11 +38,10 @@ let bombs = [];
 let canvasWidth = 800;
 let canvasHeight = 600;
 
-// 关卡配置
 const levelConfigs = {
     1: {
         name: "入门训练",
-        targetScore: 100,
+        targetScore: 500,
         bumpers: [
             { x: 400, y: 200, radius: 35 },
             { x: 300, y: 300, radius: 30 },
@@ -59,7 +58,7 @@ const levelConfigs = {
     },
     2: {
         name: "旋转挑战",
-        targetScore: 200,
+        targetScore: 1000,
         bumpers: [
             { x: 350, y: 180, radius: 30 },
             { x: 450, y: 250, radius: 35 },
@@ -78,7 +77,7 @@ const levelConfigs = {
     },
     3: {
         name: "多米诺大师",
-        targetScore: 350,
+        targetScore: 1750,
         bumpers: [
             { x: 200, y: 200, radius: 30 },
             { x: 600, y: 250, radius: 30 },
@@ -98,7 +97,7 @@ const levelConfigs = {
     },
     4: {
         name: "弹跳迷宫",
-        targetScore: 400,
+        targetScore: 2000,
         bumpers: [
             { x: 200, y: 150, radius: 28 },
             { x: 350, y: 120, radius: 32 },
@@ -123,7 +122,7 @@ const levelConfigs = {
     },
     5: {
         name: "漂浮群岛",
-        targetScore: 500,
+        targetScore: 2500,
         bumpers: [
             { x: 250, y: 200, radius: 35 },
             { x: 550, y: 200, radius: 35 },
@@ -144,7 +143,7 @@ const levelConfigs = {
     },
     6: {
         name: "旋转双翼",
-        targetScore: 600,
+        targetScore: 3000,
         bumpers: [
             { x: 200, y: 150, radius: 28 },
             { x: 600, y: 150, radius: 28 },
@@ -168,7 +167,7 @@ const levelConfigs = {
     },
     7: {
         name: "时空隧道",
-        targetScore: 700,
+        targetScore: 3500,
         bumpers: [
             { x: 150, y: 120, radius: 25 },
             { x: 650, y: 120, radius: 25 },
@@ -194,7 +193,7 @@ const levelConfigs = {
     },
     8: {
         name: "爆裂组合",
-        targetScore: 800,
+        targetScore: 4000,
         bumpers: [
             { x: 400, y: 150, radius: 40 },
             { x: 200, y: 250, radius: 30 },
@@ -216,7 +215,7 @@ const levelConfigs = {
     },
     9: {
         name: "重力漩涡",
-        targetScore: 900,
+        targetScore: 4500,
         bumpers: [
             { x: 400, y: 120, radius: 30 },
             { x: 250, y: 180, radius: 28 },
@@ -243,7 +242,7 @@ const levelConfigs = {
     },
     10: {
         name: "终极挑战",
-        targetScore: 1000,
+        targetScore: 5000,
         bumpers: [
             { x: 200, y: 100, radius: 30 },
             { x: 600, y: 100, radius: 30 },
@@ -323,7 +322,6 @@ function createEngine() {
     Render.run(render);
 }
 
-// 创建关卡
 function createLevel(level) {
     Composite.clear(engine.world, false);
     bumpers = [];
@@ -336,6 +334,18 @@ function createLevel(level) {
     bombs = [];
 
     stopPowerUpDrops();
+
+    mines.forEach(m => {
+        if (m.labelElement) {
+            m.labelElement.remove();
+        }
+    });
+
+    bombs.forEach(b => {
+        if (b.labelElement) {
+            b.labelElement.remove();
+        }
+    });
 
     const config = levelConfigs[level];
     targetScore = config.targetScore;
@@ -1209,6 +1219,18 @@ function showExplosionEffect(position) {
 
 // 游戏结束（炸弹爆炸）
 function gameOver(bombPosition) {
+    score = 0;
+    document.getElementById('score').textContent = '0';
+
+    showBallExplosionEffect(ball.position);
+
+    if (ball.labelElement) {
+        ball.labelElement.remove();
+    }
+
+    Body.setVelocity(ball, { x: 0, y: 0 });
+    ball.isSleeping = true;
+
     const popup = document.createElement('div');
     popup.style.position = 'fixed';
     popup.style.top = '50%';
@@ -1226,6 +1248,7 @@ function gameOver(bombPosition) {
         <div style="font-size: 80px; margin-bottom: 20px;">💥</div>
         <h1 style="font-size: 3rem; margin-bottom: 10px;">BOOM!</h1>
         <p style="font-size: 1.5rem; margin-bottom: 30px;">炸弹爆炸！游戏结束</p>
+        <p style="font-size: 1.2rem; margin-bottom: 30px; color: #FFB6C1;">积分已清零</p>
         <button id="retryBtn" style="
             padding: 15px 40px;
             font-size: 1.2rem;
@@ -1244,9 +1267,50 @@ function gameOver(bombPosition) {
         popup.remove();
         resetBall();
     };
+}
 
-    Body.setVelocity(ball, { x: 0, y: 0 });
-    ball.isSleeping = true;
+// 弹珠爆炸特效
+function showBallExplosionEffect(position) {
+    for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+            const particle = document.createElement('div');
+            particle.style.position = 'absolute';
+            particle.style.width = '8px';
+            particle.style.height = '8px';
+            particle.style.borderRadius = '50%';
+            particle.style.backgroundColor = ['#FFD700', '#FF6B00', '#FF0000', '#FFFFFF'][Math.floor(Math.random() * 4)];
+            particle.style.left = position.x + 'px';
+            particle.style.top = position.y + 'px';
+            particle.style.boxShadow = '0 0 8px ' + particle.style.backgroundColor;
+            particle.style.zIndex = '1000';
+
+            const angle = (Math.PI * 2 * i) / 20;
+            const velocity = 3 + Math.random() * 4;
+            const dx = Math.cos(angle) * velocity;
+            const dy = Math.sin(angle) * velocity;
+
+            document.getElementById('game-container').appendChild(particle);
+
+            let step = 0;
+            const animateParticle = () => {
+                step++;
+                const currentLeft = parseFloat(particle.style.left);
+                const currentTop = parseFloat(particle.style.top);
+
+                particle.style.left = (currentLeft + dx) + 'px';
+                particle.style.top = (currentTop + dy) + 'px';
+                particle.style.opacity = (1 - step / 25).toString();
+                particle.style.transform = `scale(${1 - step / 25})`;
+
+                if (step < 25) {
+                    requestAnimationFrame(animateParticle);
+                } else {
+                    particle.remove();
+                }
+            };
+            requestAnimationFrame(animateParticle);
+        }, i * 5);
+    }
 }
 
 // 显示道具效果
