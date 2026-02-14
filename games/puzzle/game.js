@@ -96,7 +96,7 @@ class PuzzleGame {
     }
 
     async loadRandomImage() {
-        const imageList = ['1.png', '2.png', '3.png', '4.png', '5.png'];
+        const imageList = ['1.png', '2.png', '3.png', '4.png', '5.png', '6.png'];
         const randomImage = imageList[Math.floor(Math.random() * imageList.length)];
 
         console.log('Attempting to load:', randomImage);
