@@ -118,11 +118,11 @@ class NumberMatchGame {
         this.timeLeft = 30;
         this.bombMode = false;
         this.freezeActive = false;
-        
+
         this.targetEl.textContent = this.targetNumber;
         this.updateDisplay();
         this.updateTimerDisplay();
-        this.generateGrid();
+        this.forceGenerateValidGrid();
         this.renderBoard();
 
         if (this.gameMode === 'timed') {
@@ -371,6 +371,7 @@ class NumberMatchGame {
             } else {
                 this.showQuickScore(earnedScore);
             }
+            this.checkAndFixDeadEnd();
             this.saveProgress();
         });
         
@@ -408,16 +409,16 @@ class NumberMatchGame {
                     column.push(this.grid[row][col]);
                 }
             }
-            
+
             while (column.length < this.gridSize) {
                 column.unshift(this.getRandomNumber());
             }
-            
+
             for (let row = 0; row < this.gridSize; row++) {
                 this.grid[row][col] = column[row];
             }
         }
-        
+
         this.renderBoard();
         this.animateNewCells();
     }
@@ -498,6 +499,47 @@ class NumberMatchGame {
         return null;
     }
 
+    hasValidCombination() {
+        return this.findValidCombination() !== null;
+    }
+
+    forceGenerateValidGrid() {
+        let attempts = 0;
+        const maxAttempts = 500;
+
+        while (attempts < maxAttempts) {
+            this.generateGrid();
+            if (this.hasValidCombination()) {
+                return true;
+            }
+            attempts++;
+        }
+
+        console.warn('Failed to generate valid grid after ' + maxAttempts + ' attempts');
+        return false;
+    }
+
+    checkAndFixDeadEnd() {
+        if (!this.hasValidCombination()) {
+            this.forceGenerateValidGrid();
+            this.selectedCells = [];
+            this.renderBoard();
+            this.animateNewCells();
+            this.showDeadEndAnimation();
+            return true;
+        }
+        return false;
+    }
+
+    showDeadEndAnimation() {
+        const message = document.createElement('div');
+        message.className = 'dead-end-message';
+        message.textContent = '💫 盘面已自动刷新 💫';
+        this.boardEl.style.position = 'relative';
+        this.boardEl.appendChild(message);
+        setTimeout(() => message.remove(), 2000);
+    }
+
     dfs(row, col, path, sum) {
         if (sum === this.targetNumber && path.length > 0) {
             return path;
@@ -530,30 +572,45 @@ class NumberMatchGame {
 
     shuffleBoard() {
         if (this.shuffles <= 0) return;
-        
+
         this.shuffles--;
         this.combo = 0;
         this.updateDisplay();
-        
+
         const allNumbers = [];
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
                 allNumbers.push(this.grid[row][col]);
             }
         }
-        
-        for (let i = allNumbers.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [allNumbers[i], allNumbers[j]] = [allNumbers[j], allNumbers[i]];
-        }
-        
-        let index = 0;
-        for (let row = 0; row < this.gridSize; row++) {
-            for (let col = 0; col < this.gridSize; col++) {
-                this.grid[row][col] = allNumbers[index++];
+
+        let attempts = 0;
+        const maxAttempts = 100;
+
+        while (attempts < maxAttempts) {
+            for (let i = allNumbers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allNumbers[i], allNumbers[j]] = [allNumbers[j], allNumbers[i]];
             }
+
+            let index = 0;
+            for (let row = 0; row < this.gridSize; row++) {
+                for (let col = 0; col < this.gridSize; col++) {
+                    this.grid[row][col] = allNumbers[index++];
+                }
+            }
+
+            if (this.hasValidCombination()) {
+                break;
+            }
+
+            attempts++;
         }
-        
+
+        if (!this.hasValidCombination()) {
+            this.forceGenerateValidGrid();
+        }
+
         this.selectedCells = [];
         this.renderBoard();
         this.animateNewCells();
@@ -581,18 +638,38 @@ class NumberMatchGame {
             this.cancelBomb();
             return;
         }
-        
-        const row = parseInt(cell.dataset.row);
-        const col = parseInt(cell.dataset.col);
-        
+
+        const centerRow = parseInt(cell.dataset.row);
+        const centerCol = parseInt(cell.dataset.col);
+
         document.querySelectorAll('.number-cell').forEach(c => {
             c.classList.remove('bomb-target');
         });
-        
-        cell.classList.add('removing');
+
+        const cellsToRemove = [];
+        for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+                const row = centerRow + dr;
+                const col = centerCol + dc;
+                if (row >= 0 && row < this.gridSize && col >= 0 && col < this.gridSize) {
+                    cellsToRemove.push({ row, col });
+                    const cellEl = this.boardEl.querySelector(
+                        `[data-row="${row}"][data-col="${col}"]`
+                    );
+                    if (cellEl) {
+                        cellEl.classList.add('removing');
+                    }
+                }
+            }
+        }
+
         setTimeout(() => {
-            this.grid[row][col] = null;
+            cellsToRemove.forEach(({ row, col }) => {
+                this.grid[row][col] = null;
+            });
+
             this.fillEmptySpaces();
+            this.checkAndFixDeadEnd();
             this.bombMode = false;
             this.updateDisplay();
             this.playSound('success');

@@ -33,6 +33,8 @@ let powerUpInterval = null;
 let boostZones = [];
 let mines = [];
 let bombs = [];
+let attemptsLeft = 5;
+let blackHoles = [];
 
 // 画布尺寸
 let canvasWidth = 800;
@@ -332,6 +334,7 @@ function createLevel(level) {
     boostZones = [];
     mines = [];
     bombs = [];
+    blackHoles = [];
 
     stopPowerUpDrops();
 
@@ -347,8 +350,16 @@ function createLevel(level) {
         }
     });
 
+    blackHoles.forEach(bh => {
+        if (bh.labelElement) {
+            bh.labelElement.remove();
+        }
+    });
+
     const config = levelConfigs[level];
     targetScore = config.targetScore;
+    attemptsLeft = 5;
+    updateAttemptsDisplay();
     document.getElementById('target').textContent = targetScore;
     document.getElementById('level').textContent = level;
 
@@ -379,6 +390,7 @@ function createLevel(level) {
     createTargetZone();
     createBoostZones();
     createMinesAndBombs();
+    createBlackHoles();
     createBall();
 }
 
@@ -790,6 +802,74 @@ function createMinesAndBombs() {
     });
 }
 
+function createBlackHoles() {
+    const holeCount = Math.floor(Math.random() * 2) + 1;
+    const minDistance = 200;
+
+    for (let i = 0; i < holeCount; i++) {
+        let x, y, validPosition;
+        let attempts = 0;
+
+        do {
+            validPosition = true;
+            x = 150 + Math.random() * (canvasWidth - 300);
+            y = 150 + Math.random() * (canvasHeight - 350);
+
+            for (const hole of blackHoles) {
+                const distance = Math.sqrt(Math.pow(x - hole.position.x, 2) + Math.pow(y - hole.position.y, 2));
+                if (distance < minDistance) {
+                    validPosition = false;
+                    break;
+                }
+            }
+
+            for (const mine of mines) {
+                const distance = Math.sqrt(Math.pow(x - mine.position.x, 2) + Math.pow(y - mine.position.y, 2));
+                if (distance < 80) {
+                    validPosition = false;
+                    break;
+                }
+            }
+
+            for (const bomb of bombs) {
+                const distance = Math.sqrt(Math.pow(x - bomb.position.x, 2) + Math.pow(y - bomb.position.y, 2));
+                if (distance < 100) {
+                    validPosition = false;
+                    break;
+                }
+            }
+
+            attempts++;
+        } while (!validPosition && attempts < 50);
+
+        if (validPosition) {
+            const blackHole = Bodies.circle(x, y, 35, {
+                isStatic: true,
+                isSensor: true,
+                render: {
+                    fillStyle: 'rgba(0, 0, 0, 0.7)',
+                    strokeStyle: '#8B5CF6',
+                    lineWidth: 4
+                },
+                label: 'blackHole'
+            });
+
+            blackHoles.push(blackHole);
+            Composite.add(engine.world, blackHole);
+
+            const label = document.createElement('div');
+            label.className = 'object-label';
+            label.textContent = '🌀';
+            label.style.left = (x - 18) + 'px';
+            label.style.top = (y - 18) + 'px';
+            label.style.fontSize = '36px';
+            label.style.filter = 'drop-shadow(0 0 10px #8B5CF6)';
+            document.getElementById('game-container').appendChild(label);
+            blackHole.labelElement = label;
+        }
+    }
+}
+
 // 创建掉落道具
 function createPowerUp(x, y) {
     const powerUpTypes = [
@@ -1084,6 +1164,12 @@ function onCollision(event) {
             gameOver(bomb.position);
         }
 
+        // 黑洞碰撞 - 传送到随机位置
+        if (labels.includes('ball') && labels.includes('blackHole')) {
+            const blackHole = pair.bodyA.label === 'blackHole' ? pair.bodyA : pair.bodyB;
+            teleportBall(blackHole.position);
+        }
+
         // 道具碰撞
         if (labels.includes('ball') && labels.includes('powerUp')) {
             const powerUp = pair.bodyA.label === 'powerUp' ? pair.bodyA : pair.bodyB;
@@ -1214,6 +1300,122 @@ function showExplosionEffect(position) {
             };
             requestAnimationFrame(animateParticle);
         }, i * 10);
+    }
+}
+
+// 传送弹珠
+function teleportBall(blackHolePosition) {
+    // 随机生成新位置（避开边界）
+    const newX = 150 + Math.random() * (canvasWidth - 300);
+    const newY = 150 + Math.random() * (canvasHeight - 400);
+
+    // 传送特效 - 消失动画
+    showTeleportOutEffect(blackHolePosition);
+
+    setTimeout(() => {
+        // 设置弹珠到新位置
+        Body.setPosition(ball, { x: newX, y: newY });
+        Body.setVelocity(ball, { x: (Math.random() - 0.5) * 10, y: Math.random() * -5 });
+
+        // 传送特效 - 出现动画
+        showTeleportInEffect({ x: newX, y: newY });
+
+        // 显示提示
+        const popup = document.createElement('div');
+        popup.className = 'score-popup';
+        popup.textContent = '🌀 传送!';
+        popup.style.left = newX + 'px';
+        popup.style.top = (newY - 30) + 'px';
+        popup.style.color = '#8B5CF6';
+        popup.style.fontSize = '1.5rem';
+        document.getElementById('game-container').appendChild(popup);
+        setTimeout(() => popup.remove(), 1500);
+    }, 300);
+}
+
+// 传送消失特效
+function showTeleportOutEffect(position) {
+    for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+            const particle = document.createElement('div');
+            particle.style.position = 'absolute';
+            particle.style.width = '6px';
+            particle.style.height = '6px';
+            particle.style.borderRadius = '50%';
+            particle.style.backgroundColor = '#8B5CF6';
+            particle.style.boxShadow = '0 0 10px #8B5CF6';
+            particle.style.left = position.x + 'px';
+            particle.style.top = position.y + 'px';
+            particle.style.zIndex = '1000';
+
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 50;
+            const targetX = position.x + Math.cos(angle) * distance;
+            const targetY = position.y + Math.sin(angle) * distance;
+
+            document.getElementById('game-container').appendChild(particle);
+
+            let step = 0;
+            const animateParticle = () => {
+                step++;
+                const progress = step / 20;
+                particle.style.left = (position.x + (targetX - position.x) * progress) + 'px';
+                particle.style.top = (position.y + (targetY - position.y) * progress) + 'px';
+                particle.style.opacity = (1 - progress).toString();
+
+                if (step < 20) {
+                    requestAnimationFrame(animateParticle);
+                } else {
+                    particle.remove();
+                }
+            };
+            requestAnimationFrame(animateParticle);
+        }, i * 5);
+    }
+}
+
+// 传送出现特效
+function showTeleportInEffect(position) {
+    for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+            const particle = document.createElement('div');
+            particle.style.position = 'absolute';
+            particle.style.width = '6px';
+            particle.style.height = '6px';
+            particle.style.borderRadius = '50%';
+            particle.style.backgroundColor = '#8B5CF6';
+            particle.style.boxShadow = '0 0 10px #8B5CF6';
+            particle.style.left = position.x + 'px';
+            particle.style.top = position.y + 'px';
+            particle.style.zIndex = '1000';
+
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 50;
+            const targetX = position.x + Math.cos(angle) * distance;
+            const targetY = position.y + Math.sin(angle) * distance;
+
+            particle.style.left = targetX + 'px';
+            particle.style.top = targetY + 'px';
+            particle.style.opacity = '0';
+
+            document.getElementById('game-container').appendChild(particle);
+
+            let step = 0;
+            const animateParticle = () => {
+                step++;
+                const progress = step / 20;
+                particle.style.left = (targetX + (position.x - targetX) * progress) + 'px';
+                particle.style.top = (targetY + (position.y - targetY) * progress) + 'px';
+                particle.style.opacity = progress.toString();
+
+                if (step < 20) {
+                    requestAnimationFrame(animateParticle);
+                } else {
+                    particle.remove();
+                }
+            };
+            requestAnimationFrame(animateParticle);
+        }, i * 5);
     }
 }
 
@@ -1455,6 +1657,14 @@ function startNextLevel() {
 
 // 重置弹珠
 function resetBall() {
+    attemptsLeft--;
+    updateAttemptsDisplay();
+
+    if (attemptsLeft <= 0) {
+        showAttemptsFailed();
+        return;
+    }
+
     if (ball) {
         Composite.remove(engine.world, ball);
     }
@@ -1478,6 +1688,51 @@ function resetBall() {
 
     createBall();
     levelComplete = false;
+}
+
+// 显示尝试次数耗尽弹窗
+function showAttemptsFailed() {
+    if (ball) {
+        Body.setVelocity(ball, { x: 0, y: 0 });
+        ball.isSleeping = true;
+    }
+
+    const popup = document.createElement('div');
+    popup.style.position = 'fixed';
+    popup.style.top = '50%';
+    popup.style.left = '50%';
+    popup.style.transform = 'translate(-50%, -50%)';
+    popup.style.background = 'rgba(0, 0, 0, 0.95)';
+    popup.style.color = '#FFF';
+    popup.style.padding = '40px 60px';
+    popup.style.borderRadius = '20px';
+    popup.style.textAlign = 'center';
+    popup.style.zIndex = '2000';
+    popup.style.boxShadow = '0 0 50px rgba(255, 0, 0, 0.8)';
+
+    popup.innerHTML = `
+        <div style="font-size: 80px; margin-bottom: 20px;">😢</div>
+        <h1 style="font-size: 3rem; margin-bottom: 10px;">尝试次数用尽!</h1>
+        <p style="font-size: 1.5rem; margin-bottom: 30px;">你的得分: ${score}</p>
+        <p style="font-size: 1.2rem; margin-bottom: 30px; color: #FFB6C1;">目标分数: ${targetScore}</p>
+        <button id="retryLevelBtn" style="
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        ">重新挑战这一关</button>
+    `;
+
+    document.body.appendChild(popup);
+
+    document.getElementById('retryLevelBtn').onclick = () => {
+        popup.remove();
+        createLevel(currentLevel);
+    };
 }
 
 // 重新开始游戏
@@ -1515,6 +1770,18 @@ function createBackgroundStars() {
         star.style.top = Math.random() * 100 + '%';
         star.style.animationDelay = Math.random() * 2 + 's';
         container.appendChild(star);
+    }
+}
+
+// 更新剩余次数显示
+function updateAttemptsDisplay() {
+    const display = document.getElementById('attemptsDisplay');
+    display.textContent = attemptsLeft + '次';
+
+    if (attemptsLeft <= 2) {
+        display.classList.add('critical');
+    } else {
+        display.classList.remove('critical');
     }
 }
 
@@ -1559,6 +1826,13 @@ function gameLoop() {
             if (b.labelElement) {
                 b.labelElement.style.left = (b.position.x - 15) + 'px';
                 b.labelElement.style.top = (b.position.y - 15) + 'px';
+            }
+        });
+
+        blackHoles.forEach(bh => {
+            if (bh.labelElement) {
+                bh.labelElement.style.left = (bh.position.x - 18) + 'px';
+                bh.labelElement.style.top = (bh.position.y - 18) + 'px';
             }
         });
     }

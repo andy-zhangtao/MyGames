@@ -369,10 +369,38 @@
             0%, 100% { opacity: 0.3; }
             50% { opacity: 1; }
         }
+
+        /* 剩余次数显示 */
+        .attempts-display {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.15);
+            z-index: 1;
+            pointer-events: none;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .attempts-display.critical {
+            color: rgba(255, 0, 0, 0.25);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.25; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body>
     <div class="bg-decoration" id="bgDecoration"></div>
+
+    <!-- 剩余次数显示 -->
+    <div class="attempts-display" id="attemptsDisplay">5次</div>
 
     <div id="game-container">
         <!-- 顶部信息栏 -->
